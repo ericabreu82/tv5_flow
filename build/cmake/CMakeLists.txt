@@ -1,0 +1,51 @@
+cmake_minimum_required(VERSION 2.8.12)
+
+project(fiocruz)
+
+cmake_policy(SET CMP0020 NEW)
+
+if(${CMAKE_MAJOR_VERSION} GREATER 2)
+  cmake_policy(SET CMP0007 NEW)
+  cmake_policy(SET CMP0026 OLD)
+  cmake_policy(SET CMP0042 NEW)  
+  cmake_policy(SET CMP0043 NEW)  
+  cmake_policy(SET CMP0053 OLD)  
+endif()
+
+set_directory_properties(PROPERTIES CLEAN_NO_CUSTOM 1)
+
+#
+# main variables for the build script
+#
+
+# variables that control the system versioning
+set(FIOCRUZ_VERSION_MINOR 0)
+set(FIOCRUZ_VERSION_MAJOR 5)
+set(FIOCRUZ_VERSION_PATCH 0)
+set(FIOCRUZ_VERSION_STATUS "rc")
+set(FIOCRUZ_VERSION_STRING "${FIOCRUZ_VERSION_MAJOR}.${FIOCRUZ_VERSION_MINOR}.${FIOCRUZ_VERSION_PATCH}-${FIOCRUZ_VERSION_STATUS}")
+set(FIOCRUZ_VERSION "0x050000")
+set(FIOCRUZ_PKG_VERSION ${FIOCRUZ_VERSION_MAJOR}.${FIOCRUZ_VERSION_MINOR}.${FIOCRUZ_VERSION_PATCH})
+
+find_package(terralib REQUIRED)
+
+find_package(Boost REQUIRED)
+
+find_package(Qt5 5.1 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
+
+find_package(Qt5LinguistTools REQUIRED COMPONENTS lupdate lrelease)
+
+add_definitions(-D_SCL_SECURE_NO_WARNINGS -DBOOST_ALL_NO_LIB -DBOOST_FILESYSTEM_VERSION=3 -DBOOST_UBLAS_TYPE_CHECK=0)
+
+set(CMAKE_AUTOMOC ON)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+add_subdirectory(fiocruz)
+

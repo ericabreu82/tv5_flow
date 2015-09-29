@@ -26,7 +26,6 @@
 // Terralib
 #include <terralib/qt/af/events/LayerEvents.h>
 #include <terralib/qt/af/ApplicationController.h>
-#include <terralib/qt/af/Project.h>
 #include "AbstractAction.h"
 
 // STL
@@ -63,17 +62,14 @@ void te::qt::plugins::fiocruz::AbstractAction::addNewLayer(te::map::AbstractLaye
 {
   te::qt::af::evt::LayerAdded evt(layer.get());
 
-  te::qt::af::ApplicationController::getInstance().broadcast(&evt);
+  emit triggered(&evt);
 }
 
 std::list<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::AbstractAction::getLayers()
 {
-  std::list<te::map::AbstractLayerPtr> list;
+  te::qt::af::evt::GetAvailableLayers e;
 
-  te::qt::af::Project* prj = te::qt::af::ApplicationController::getInstance().getProject();
+  emit triggered(&e);
 
-  if(prj)
-    list = prj->getAllLayers();
-
-  return list;
+  return e.m_layers;
 }

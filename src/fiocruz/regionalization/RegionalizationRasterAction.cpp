@@ -30,7 +30,6 @@
 // Terralib
 #include <terralib/qt/af/ApplicationController.h>
 #include <terralib/qt/af/BaseApplication.h>
-#include <terralib/qt/af/Project.h>
 
 // Qt
 #include <QtCore/QObject>
@@ -50,18 +49,13 @@ te::qt::plugins::fiocruz::RegionalizationRasterAction::~RegionalizationRasterAct
 void te::qt::plugins::fiocruz::RegionalizationRasterAction::onActionActivated(bool checked)
 {
   //get input layers
-  te::qt::af::Project* prj = te::qt::af::ApplicationController::getInstance().getProject();
-
-  std::list<te::map::AbstractLayerPtr> list;
-
-  if(prj)
-    list = prj->getVisibleSingleLayers();
+  std::list<te::map::AbstractLayerPtr> list = getLayers();
 
   //get display extent
-  te::qt::af::BaseApplication* ba = dynamic_cast<te::qt::af::BaseApplication*>(te::qt::af::ApplicationController::getInstance().getMainWindow());
+  te::qt::af::BaseApplication* ba = dynamic_cast<te::qt::af::BaseApplication*>(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow());
 
   //show interface
-  te::qt::plugins::fiocruz::RegionalizationRasterWizard dlg(te::qt::af::ApplicationController::getInstance().getMainWindow());
+  te::qt::plugins::fiocruz::RegionalizationRasterWizard dlg(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow());
 
   //dlg.setLayerList(list);
 

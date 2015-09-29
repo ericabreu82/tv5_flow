@@ -68,10 +68,12 @@ void te::qt::plugins::fiocruz::Plugin::startup()
   if(m_initialized)
     return;
 
+  te::qt::af::AppCtrlSingleton::getInstance().addListener(this, te::qt::af::SENDER);
+
   TE_LOG_TRACE(TE_TR("Fiocruz Plugin startup!"));
 
 // add plugin menu
-  m_menu = te::qt::af::ApplicationController::getInstance().getMenu("Fiocruz");
+  m_menu = te::qt::af::AppCtrlSingleton::getInstance().getMenu("Fiocruz");
   m_menu->setTitle(TE_TR("Fiocruz"));
 
   m_flowMenu = new QMenu(m_menu);
@@ -108,22 +110,27 @@ void te::qt::plugins::fiocruz::Plugin::registerActions()
 {
 #ifdef FIOCRUZ_HAVE_FLOWCLASSIFY
   m_flowClassify = new te::qt::plugins::fiocruz::FlowClassifyAction(m_flowMenu);
+  connect(m_flowClassify, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
 #endif
 
 #ifdef FIOCRUZ_HAVE_FLOWDIAGRAM
   m_flowDiagram = new te::qt::plugins::fiocruz::FlowDiagramAction(m_flowMenu);
+  connect(m_flowDiagram, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
 #endif
 
 #ifdef FIOCRUZ_HAVE_FLOWNETWORK
   m_flowNetwork = new te::qt::plugins::fiocruz::FlowNetworkAction(m_flowMenu);
+  connect(m_flowNetwork, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
 #endif
 
 #ifdef FIOCRUZ_HAVE_REGIONALIZATIONRASTER
   m_regRaster = new te::qt::plugins::fiocruz::RegionalizationRasterAction(m_regMenu);
+  connect(m_regRaster, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
 #endif
 
 #ifdef FIOCRUZ_HAVE_REGIONALIZATIONVECTOR
   m_regVector = new te::qt::plugins::fiocruz::RegionalizationVectorAction(m_regMenu);
+  connect(m_regVector, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
 #endif
 }
 

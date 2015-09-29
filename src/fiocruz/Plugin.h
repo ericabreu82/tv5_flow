@@ -38,6 +38,13 @@ namespace te
 {
   namespace qt
   {
+    namespace af
+    {
+      namespace evt
+      {
+        struct Event;
+      }
+    }
     namespace plugins
     {
       namespace fiocruz
@@ -48,8 +55,10 @@ namespace te
         class RegionalizationRasterAction;
         class RegionalizationVectorAction;
         
-        class Plugin : public te::plugin::Plugin
+        class Plugin : public QObject,  public te::plugin::Plugin
         {
+          Q_OBJECT
+
           public:
 
             Plugin(const te::plugin::PluginInfo& pluginInfo);
@@ -73,6 +82,10 @@ namespace te
 
             */
             void unRegisterActions();
+
+          Q_SIGNALS:
+
+            void triggered(te::qt::af::evt::Event* e);
 
           protected:
 

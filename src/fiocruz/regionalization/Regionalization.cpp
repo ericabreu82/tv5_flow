@@ -96,7 +96,7 @@ bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataS
   te::da::Distinct* distinct = new te::da::Distinct;
   distinct->push_back(expression);
 
-  te::da::Field* field = new te::da::Field(columnName);
+  te::da::Field* field = new te::da::Field(expression);
 
   te::da::Fields* fields = new te::da::Fields;
   fields->push_back(field);

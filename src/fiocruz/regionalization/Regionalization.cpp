@@ -25,6 +25,14 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 #include "Regionalization.h"
 
+#include "terralib/dataaccess/query/Select.h"
+#include "terralib/dataaccess/query/Field.h"
+#include "terralib/dataaccess/query/FromItem.h"
+#include "terralib/dataaccess/query/DataSetName.h"
+#include "terralib/dataaccess/query/Distinct.h"
+#include "terralib/dataaccess/query/Expression.h"
+#include "terralib/dataaccess/query/PropertyName.h"
+
 te::qt::plugins::fiocruz::Regionalization::Regionalization()
 {
 }
@@ -74,6 +82,41 @@ bool te::qt::plugins::fiocruz::Regionalization::generateMercadoMap(te::da::DataS
         ++(itInter->second);
       }
     }
+  }
+
+  return true;
+}
+
+bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds)
+{
+  vecIds.clear();
+
+  te::da::Expression* expression = new te::da::PropertyName(columnName);
+
+  te::da::Distinct* distinct = new te::da::Distinct;
+  distinct->push_back(expression);
+
+  te::da::Field* field = new te::da::Field(columnName);
+
+  te::da::Fields* fields = new te::da::Fields;
+  fields->push_back(field);
+
+  te::da::FromItem* fromItem = new te::da::DataSetName(dataSetName);
+  te::da::From* from = new te::da::From;
+  from->push_back(fromItem);
+
+  te::da::Select select(fields, from);
+  select.setDistinct(distinct);
+
+  std::auto_ptr<te::da::DataSet> dataSet = dataSource->query(select);
+  if (dataSet->moveBeforeFirst() == false)
+  {
+    return false;
+  }
+
+  while (dataSet->moveNext())
+  {
+    vecIds.push_back(dataSet->getString(0));
   }
 
   return true;

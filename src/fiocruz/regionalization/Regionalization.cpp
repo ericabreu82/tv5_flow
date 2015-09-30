@@ -25,6 +25,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 #include "Regionalization.h"
 
+#include "terralib/dataaccess/datasource/DataSourceFactory.h"
+#include "terralib/dataaccess/datasource/DataSourceTransactor.h"
+
 #include "terralib/dataaccess/query/Select.h"
 #include "terralib/dataaccess/query/Field.h"
 #include "terralib/dataaccess/query/FromItem.h"
@@ -32,6 +35,10 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "terralib/dataaccess/query/Distinct.h"
 #include "terralib/dataaccess/query/Expression.h"
 #include "terralib/dataaccess/query/PropertyName.h"
+
+#include "terralib/datatype/StringProperty.h"
+
+#include "terralib/memory/DataSet.h"
 
 te::qt::plugins::fiocruz::Regionalization::Regionalization()
 {
@@ -42,7 +49,55 @@ te::qt::plugins::fiocruz::Regionalization::~Regionalization()
 
 }
 
-bool te::qt::plugins::fiocruz::Regionalization::generateMercadoMap(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny, MercadoMap& mercadoMap)
+te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::readFile(const std::string& fileName)
+{
+  std::map<std::string, std::string> connInfo;
+  std::auto_ptr<te::da::DataSource> dataSource = te::da::DataSourceFactory::make("OGR");
+
+  connInfo["URI"] = fileName;
+
+  dataSource->setConnectionInfo(connInfo);
+  dataSource->open();
+
+  // get a transactor to interact to the data source origin
+  std::auto_ptr<te::da::DataSourceTransactor> transactor = dataSource->getTransactor();
+
+  std::vector<std::string> datasets = transactor->getDataSetNames();
+
+  std::auto_ptr<te::da::DataSet> datasetPtr = transactor->getDataSet(datasets[0]);
+
+  te::da::DataSetPtr dataSet(datasetPtr.release());
+  return dataSet;
+}
+
+te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::createMercadoDataSet(const std::string& originColumn, const std::string& destinyColumn, MercadoMap& mercadoMap)
+{
+  std::string datasettypename;
+  te::da::DataSetType* dataSetType = new te::da::DataSetType(datasettypename);
+
+  //first property: measure_id
+  te::dt::Property* propertyId = new te::dt::StringProperty(originColumn, te::dt::STRING, 0, true);
+
+  std::string namepk = datasettypename + "_pk";
+  te::da::PrimaryKey* primaryKey = new te::da::PrimaryKey(namepk, dataSetType);
+  primaryKey->add(propertyId);
+
+  dataSetType->add(propertyId);
+
+  MercadoMap::const_iterator itMercMap = mercadoMap.begin();
+  while (itMercMap != mercadoMap.end())
+  {
+    te::dt::Property* property = new te::dt::SimpleProperty("obj_" + itMercMap->first, te::dt::INT32_TYPE, true);
+    dataSetType->add(property);
+
+    ++itMercMap;
+  }
+
+  te::da::DataSetPtr dataSet(new te::mem::DataSet(dataSetType));
+  return dataSet;
+}
+
+bool te::qt::plugins::fiocruz::Regionalization::createMercadoMap(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny, MercadoMap& mercadoMap)
 {
   if (dataSet->moveBeforeFirst() == false)
   {
@@ -96,17 +151,13 @@ bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataS
   te::da::Distinct* distinct = new te::da::Distinct;
   distinct->push_back(expression);
 
-  te::da::Field* field = new te::da::Field(expression);
-
-  te::da::Fields* fields = new te::da::Fields;
-  fields->push_back(field);
-
   te::da::FromItem* fromItem = new te::da::DataSetName(dataSetName);
   te::da::From* from = new te::da::From;
   from->push_back(fromItem);
 
-  te::da::Select select(fields, from);
+  te::da::Select select;
   select.setDistinct(distinct);
+  select.setFrom(from);
 
   std::auto_ptr<te::da::DataSet> dataSet = dataSource->query(select);
   if (dataSet->moveBeforeFirst() == false)

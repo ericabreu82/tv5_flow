@@ -56,7 +56,11 @@ namespace te
 
           virtual ~Regionalization();
 
-          bool generateMercadoMap(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny, MercadoMap& mercadoMap);
+          te::da::DataSetPtr readFile(const std::string& fileName);
+
+          te::da::DataSetPtr createMercadoDataSet(const std::string& originColumn, const std::string& destinyColumn, MercadoMap& mercadoMap);
+
+          bool createMercadoMap(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny, MercadoMap& mercadoMap);
 
           bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds);
         };

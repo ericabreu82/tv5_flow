@@ -39,6 +39,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "terralib/datatype/StringProperty.h"
 
 #include "terralib/memory/DataSet.h"
+#include "terralib/memory/DataSetItem.h"
 
 te::qt::plugins::fiocruz::Regionalization::Regionalization()
 {
@@ -72,10 +73,12 @@ te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::readFile(const std
 
 te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::createMercadoDataSet(const std::string& originColumn, const std::string& destinyColumn, MercadoMap& mercadoMap)
 {
+  //creates the dataSet
+
   std::string datasettypename;
   te::da::DataSetType* dataSetType = new te::da::DataSetType(datasettypename);
 
-  //first property: measure_id
+  //first property: origin column
   te::dt::Property* propertyId = new te::dt::StringProperty(originColumn, te::dt::STRING, 0, true);
 
   std::string namepk = datasettypename + "_pk";
@@ -84,6 +87,8 @@ te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::createMercadoDataS
 
   dataSetType->add(propertyId);
 
+
+  //other properties: all the possible destinations
   MercadoMap::const_iterator itMercMap = mercadoMap.begin();
   while (itMercMap != mercadoMap.end())
   {
@@ -93,8 +98,42 @@ te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::createMercadoDataS
     ++itMercMap;
   }
 
-  te::da::DataSetPtr dataSet(new te::mem::DataSet(dataSetType));
-  return dataSet;
+  te::mem::DataSet* dataSet = new te::mem::DataSet(dataSetType);
+
+  //populates the dataSet based on the given MercadoMap
+  std::vector<std::string> vecDistinctIds;
+
+  for (size_t i = 0; i < vecDistinctIds.size(); i++)
+  {
+    std::string currentId = vecDistinctIds[i];
+
+    te::mem::DataSetItem* dataSetItem = new te::mem::DataSetItem(dataSet);
+    dataSetItem->setString(0, currentId); //Id
+
+    itMercMap = mercadoMap.begin();
+
+    size_t originColumnIndex = 1;
+    while (itMercMap != mercadoMap.end())
+    {
+      int originCount = 0;
+
+      OriginMap::const_iterator itOrigin = itMercMap->second.find(currentId);
+      if (itOrigin != itMercMap->second.end())
+      {
+        originCount = (int)itOrigin->second;
+      }
+      
+      dataSetItem->setInt32(originColumnIndex, originCount); //origin count
+      ++originColumnIndex;
+
+      ++itMercMap;
+    }
+
+    dataSet->add(dataSetItem);
+  }
+
+  te::da::DataSetPtr dataSetPtr(dataSet);
+  return dataSetPtr;
 }
 
 bool te::qt::plugins::fiocruz::Regionalization::createMercadoMap(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny, MercadoMap& mercadoMap)

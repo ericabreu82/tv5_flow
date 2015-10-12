@@ -70,6 +70,14 @@ namespace te
 
           void setList(std::list<te::map::AbstractLayerPtr>& layerList);
 
+          std::vector<std::string> getUniqueObjects();
+
+        public slots:
+
+        void onSpatialLayerComboBoxActivated(int index);
+
+        void onTabularLayerComboBoxActivated(int index);
+
         private:
 
           std::auto_ptr<Ui::ExternalTableWizardPageForm> m_ui;

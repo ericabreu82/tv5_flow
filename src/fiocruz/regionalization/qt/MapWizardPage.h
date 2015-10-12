@@ -44,6 +44,8 @@ namespace te
 {
   namespace qt
   {
+    namespace widgets { class ColorCatalogWidget; }
+
     namespace plugins
     {
       namespace fiocruz
@@ -73,6 +75,8 @@ namespace te
         private:
 
           std::auto_ptr<Ui::MapWizardPageForm> m_ui;
+
+          te::qt::widgets::ColorCatalogWidget* m_colorBar;          //!< Widget used to pick a color.
 
         };
       }   // end namespace fiocruz

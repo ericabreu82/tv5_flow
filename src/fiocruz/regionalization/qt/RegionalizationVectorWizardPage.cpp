@@ -38,6 +38,8 @@ m_ui(new Ui::RegionalizationVectorWizardPageForm)
   //setup controls
   m_ui->setupUi(this);
 
+  m_ui->m_targetDatasourceToolButton->setIcon(QIcon::fromTheme("datasource"));
+
   //configure page
   this->setTitle(tr("Regionalization Vector"));
   this->setSubTitle(tr("Reginalization Maps using vectorial representation."));
@@ -50,10 +52,15 @@ te::qt::plugins::fiocruz::RegionalizationVectorWizardPage::~RegionalizationVecto
 
 bool te::qt::plugins::fiocruz::RegionalizationVectorWizardPage::isComplete() const
 {
+  if (m_ui->m_repositoryLineEdit->text().isEmpty())
+    return false;
+
+  if (m_ui->m_newLayerNameLineEdit->text().isEmpty())
+    return false;
+
   return true;
 }
 
 void te::qt::plugins::fiocruz::RegionalizationVectorWizardPage::setList(std::list<te::map::AbstractLayerPtr>& layerList)
 {
-
 }

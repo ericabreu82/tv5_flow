@@ -79,7 +79,7 @@ namespace te
           std::auto_ptr<te::qt::plugins::fiocruz::RegionalizationVectorWizardPage> m_regionalizationPage;
           std::auto_ptr<te::qt::plugins::fiocruz::MapWizardPage> m_mapPage;
           std::auto_ptr<te::qt::plugins::fiocruz::LegendWizardPage> m_legendPage;
-          std::auto_ptr<te::qt::plugins::fiocruz::ExternalTableWizardPage> m_externalTalbePage;
+          std::auto_ptr<te::qt::plugins::fiocruz::ExternalTableWizardPage> m_externalTablePage;
 
 
         };

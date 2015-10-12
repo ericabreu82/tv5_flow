@@ -57,7 +57,7 @@ void te::qt::plugins::fiocruz::RegionalizationVectorAction::onActionActivated(bo
   //show interface
   te::qt::plugins::fiocruz::RegionalizationVectorWizard dlg(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow());
 
-  //dlg.setLayerList(list);
+  dlg.setList(list);
 
   if(dlg.exec() == QDialog::Accepted)
   {

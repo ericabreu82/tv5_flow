@@ -9,6 +9,8 @@ include_directories(
   ${terralib_INCLUDE_DIRS}
   ${terralib_DIR}
   ${Boost_INCLUDE_DIR}
+  ${QWT_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIR}/qwt
 )
 
 file(GLOB FIOCRUZ_SRC_FILES ${FIOCRUZ_ABSOLUTE_ROOT_DIR}/src/fiocruz/*.cpp)

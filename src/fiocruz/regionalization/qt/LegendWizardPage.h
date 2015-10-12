@@ -31,6 +31,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "../../Config.h"
 
 // STL
+#include <map>
 #include <memory>
 
 // Qt
@@ -42,8 +43,15 @@ namespace Ui { class LegendWizardPageForm; }
 
 namespace te
 {
+  namespace map
+  {
+    class GroupingItem;
+  }
+
   namespace qt
   {
+    namespace widgets { class ColorCatalogWidget; }
+
     namespace plugins
     {
       namespace fiocruz
@@ -68,12 +76,31 @@ namespace te
 
         public:
 
-          void setList(std::list<te::map::AbstractLayerPtr>& layerList);
+          void setList(std::vector<std::string> objects);
+
+          std::map<std::string, te::map::GroupingItem*> getLegendMap();
+
+        public slots:
+
+          void onApplyPushButtonReleased();
+
+        protected:
+
+          std::vector<std::string> getObjects();
+
+          void buildLegend(std::vector<std::string>& objects);
+
+          void buildSymbolizer();
+
+          void updateLegend();
 
         private:
 
           std::auto_ptr<Ui::LegendWizardPageForm> m_ui;
 
+          te::qt::widgets::ColorCatalogWidget* m_colorBar;          //!< Widget used to pick a color.
+
+          std::vector<te::map::GroupingItem*> m_legend;             //!< Grouping items
         };
       }   // end namespace fiocruz
     }     // end namespace plugins

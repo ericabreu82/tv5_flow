@@ -36,6 +36,7 @@ te::qt::plugins::fiocruz::RegionalizationVectorWizard::RegionalizationVectorWiza
   //configure the wizard
   this->setWizardStyle(QWizard::ModernStyle);
   this->setWindowTitle(tr("Reginalization Maps using vectorial representation."));
+  this->setFixedSize(QSize(740, 580));
 
   addPages();
 }
@@ -47,36 +48,48 @@ te::qt::plugins::fiocruz::RegionalizationVectorWizard::~RegionalizationVectorWiz
 
 bool te::qt::plugins::fiocruz::RegionalizationVectorWizard::validateCurrentPage()
 {
-  if (currentPage() == m_regionalizationPage.get())
+  if (currentPage() == m_externalTablePage.get())
   {
-  }
-  else if (currentPage() == m_mapPage.get())
-  {
+    bool res = m_externalTablePage->isComplete();
+
+    std::vector<std::string> objects = m_externalTablePage->getUniqueObjects();
+
+    if (res && !objects.empty())
+    {
+      m_legendPage->setList(objects);
+
+      return true;
+    }
   }
   else if (currentPage() == m_legendPage.get())
   {
+    return m_legendPage->isComplete();
   }
-  else if (currentPage() == m_externalTalbePage.get())
+  else if (currentPage() == m_mapPage.get())
   {
+    return m_mapPage->isComplete();
+  }
+  else if (currentPage() == m_regionalizationPage.get())
+  {
+    return m_regionalizationPage->isComplete();
   }
 
-  return true;
+  return false;
 }
 
 void te::qt::plugins::fiocruz::RegionalizationVectorWizard::setList(std::list<te::map::AbstractLayerPtr>& layerList)
 {
-
+  m_externalTablePage->setList(layerList);
 }
-
 
 void te::qt::plugins::fiocruz::RegionalizationVectorWizard::addPages()
 {
+  m_externalTablePage.reset(new te::qt::plugins::fiocruz::ExternalTableWizardPage(this));
+  m_legendPage.reset(new te::qt::plugins::fiocruz::LegendWizardPage(this));
   m_regionalizationPage.reset(new te::qt::plugins::fiocruz::RegionalizationVectorWizardPage(this));
   m_mapPage.reset(new te::qt::plugins::fiocruz::MapWizardPage(this));
-  m_legendPage.reset(new te::qt::plugins::fiocruz::LegendWizardPage(this));
-  m_externalTalbePage.reset(new te::qt::plugins::fiocruz::ExternalTableWizardPage(this));
 
-  addPage(m_externalTalbePage.get());
+  addPage(m_externalTablePage.get());
   addPage(m_legendPage.get());
   addPage(m_mapPage.get());
   addPage(m_regionalizationPage.get());

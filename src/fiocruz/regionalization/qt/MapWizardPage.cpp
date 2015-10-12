@@ -26,6 +26,10 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "MapWizardPage.h"
 #include "ui_MapWizardPageForm.h"
 
+// TerraLib
+#include <terralib/qt/widgets/colorbar/ColorBar.h>
+#include <terralib/qt/widgets/colorbar/ColorCatalogWidget.h>
+
 // Qt
 #include <QMessageBox>
 
@@ -38,6 +42,15 @@ m_ui(new Ui::MapWizardPageForm)
   //setup controls
   m_ui->setupUi(this);
 
+  //add color catalog widget
+  QGridLayout* l = new QGridLayout(m_ui->m_widget);
+  l->setContentsMargins(0, 0, 0, 0);
+  m_colorBar = new  te::qt::widgets::ColorCatalogWidget(m_ui->m_widget);
+  l->addWidget(m_colorBar);
+
+  m_colorBar->getColorBar()->setHeight(20);
+  m_colorBar->getColorBar()->setScaleVisible(false);
+
   //configure page
   this->setTitle(tr("Map"));
   this->setSubTitle(tr("Define the maps properties to be used in regionalization."));
@@ -45,7 +58,6 @@ m_ui(new Ui::MapWizardPageForm)
 
 te::qt::plugins::fiocruz::MapWizardPage::~MapWizardPage()
 {
-
 }
 
 bool te::qt::plugins::fiocruz::MapWizardPage::isComplete() const

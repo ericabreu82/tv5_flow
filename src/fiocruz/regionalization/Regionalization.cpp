@@ -136,51 +136,6 @@ te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::createMercadoDataS
   return dataSetPtr;
 }
 
-bool te::qt::plugins::fiocruz::Regionalization::createMercadoMap(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny, MercadoMap& mercadoMap)
-{
-  if (dataSet->moveBeforeFirst() == false)
-  {
-    return false;
-  }
-
-  mercadoMap.clear();
-
-  while (dataSet->moveNext())
-  {
-    std::string origin = dataSet->getString(columnOrigin);
-    std::string destiny = dataSet->getString(columnDestiny);
-
-    MercadoMap::iterator it = mercadoMap.find(destiny);
-
-    if (it == mercadoMap.end())
-    {
-      //destino ainda nao se encontra no MAP
-      OriginMap auxMap;
-      auxMap.insert(OriginMap::value_type(origin, 1));
-      mercadoMap.insert(MercadoMap::value_type(destiny, auxMap));
-
-    }
-    else
-    {
-      //destino ja esta no MAP
-      OriginMap::iterator itInter = it->second.find(origin);
-
-      if (itInter == it->second.end())
-      {
-        //origem ainda nao se encontra no MAP
-        it->second.insert(OriginMap::value_type(origin, 1));
-      }
-      else
-      {
-        //origem ja esta no MAP
-        ++(itInter->second);
-      }
-    }
-  }
-
-  return true;
-}
-
 bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds)
 {
   vecIds.clear();

@@ -18,14 +18,12 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 /*!
-\file fiocruz/src/fiocruz/AbstractAction.h
+\file fiocruz/src/fiocruz/RegionalizationMap.h
 
-\brief This file defines the abstract class AbstractAction
+\brief This file defines the representation of a Regionalization Map
 */
 
-#include "../Config.h"
 #include "terralib/dataaccess/dataset/DataSet.h"
-#include "terralib/dataaccess/datasource/DataSource.h"
 
 #include <map>
 #include <string>
@@ -39,28 +37,30 @@ namespace te
       namespace fiocruz
       {
         /*!
-        \class AbstractAction
+        \class RegionalizationMap
 
-        \brief This is an abstract class used to register actions into fiocruz pluging.
+        \brief This class defines the representation of a Regionalization Map
 
         */
-        class Regionalization
+        class RegionalizationMap
         {
-          typedef std::map<std::string, std::size_t> OriginMap;
-          typedef std::map<std::string, OriginMap> MercadoMap;
-
+          typedef std::map<std::string, std::size_t> DestinyMap;
+          typedef std::map<std::string, DestinyMap> OriginMap;
 
         public:
 
-          Regionalization();
+          RegionalizationMap();
 
-          virtual ~Regionalization();
+          virtual ~RegionalizationMap();
 
-          te::da::DataSetPtr readFile(const std::string& fileName);
+          bool init(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny);
 
-          te::da::DataSetPtr createMercadoDataSet(const std::string& originColumn, const std::string& destinyColumn, MercadoMap& mercadoMap);
+          bool getDominanceId(const std::string& originId, int minLevel, int maxLevel, std::string& destinyId);
 
-          bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds);
+        protected:
+
+          OriginMap m_originMap;
+
         };
       }
     }

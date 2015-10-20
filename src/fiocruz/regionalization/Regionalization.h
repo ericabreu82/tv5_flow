@@ -32,12 +32,20 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 namespace te
 {
+  namespace mem
+  {
+    class DataSet;
+  }
+
   namespace qt
   {
     namespace plugins
     {
       namespace fiocruz
       {
+        class RegionalizationMap;
+
+
         /*!
         \class AbstractAction
 
@@ -61,6 +69,10 @@ namespace te
           te::da::DataSetPtr createMercadoDataSet(const std::string& originColumn, const std::string& destinyColumn, MercadoMap& mercadoMap);
 
           bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds);
+
+          te::mem::DataSet* cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName);
+
+          bool addDominanceProperty(te::mem::DataSet* dataSet, const std::string& originColumn, int minLevel, int maxLevel, const std::string& destinyColumn, const RegionalizationMap& regMap, const std::string& newpropertyName);
         };
       }
     }

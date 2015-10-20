@@ -24,6 +24,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 #include "Regionalization.h"
+#include "RegionalizationMap.h"
 
 #include "terralib/dataaccess/datasource/DataSourceFactory.h"
 #include "terralib/dataaccess/datasource/DataSourceTransactor.h"
@@ -166,3 +167,59 @@ bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataS
 
   return true;
 }
+
+te::mem::DataSet* te::qt::plugins::fiocruz::Regionalization::cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName)
+{
+  // we first get the information about the input vector DataSet
+  std::auto_ptr<te::da::DataSet> inputDataSet = dataSource->getDataSet(dataSetName);
+  std::auto_ptr<te::da::DataSetType> inputDataSetType = dataSource->getDataSetType(dataSetName);
+
+  //then we start the creation of the output dataSet by
+  //1 - Copying all the columns of the input DataSet to the output dataSet
+  te::da::DataSetType* outputDataSetType = new te::da::DataSetType(*inputDataSetType.get());
+  outputDataSetType->setName(outputDataSetName);
+ 
+  //we now populate the dataSet
+  size_t size = inputDataSetType->size();
+
+  te::mem::DataSet* outputDataSet = new te::mem::DataSet(outputDataSetType);
+
+  inputDataSet->moveBeforeFirst();
+  while (inputDataSet->moveNext() == true)
+  {
+    te::mem::DataSetItem* dataSetItem = new te::mem::DataSetItem(outputDataSet);
+    for (size_t i = 0; i < size; ++i)
+    {
+      dataSetItem->setValue(i, inputDataSet->getValue(i).release());
+    }
+
+    outputDataSet->add(dataSetItem);
+  }
+  
+  return outputDataSet;
+}
+
+bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(te::mem::DataSet* dataSet, const std::string& originColumn, int minLevel, int maxLevel, const std::string& destinyColumn, const RegionalizationMap& regMap, const std::string& newpropertyName)
+{
+  {
+    std::string dominanceColumnName = "dom_primaria";
+    te::dt::Property* propertyDominance = new te::dt::StringProperty(dominanceColumnName, te::dt::STRING, 255, false);
+    //outputDataSetType->add(propertyDominance);
+  }
+  {
+    std::string dominanceColumnName = "dom_secundaria";
+    te::dt::Property* propertyDominance = new te::dt::StringProperty(dominanceColumnName, te::dt::STRING, 255, false);
+    //outputDataSetType->add(propertyDominance);
+  }
+  {
+    std::string dominanceColumnName = "dom_terciaria";
+    te::dt::Property* propertyDominance = new te::dt::StringProperty(dominanceColumnName, te::dt::STRING, 255, false);
+    //outputDataSetType->add(propertyDominance);
+    return true;
+  }
+}
+
+////and then we persist
+//std::map<std::string, std::string> mapOptions;
+//dataSource->createDataSet(outputDataSetType, mapOptions);
+//dataSource->add(outputDataSetName, outputDataSet, mapOptions);

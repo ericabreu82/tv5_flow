@@ -55,7 +55,9 @@ namespace te
 
           bool init(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny);
 
-          bool getDominanceId(const std::string& originId, int minLevel, int maxLevel, std::string& destinyId);
+          std::string getDominanceId(const std::string& originId, int minLevel, int maxLevel) const;
+
+          size_t getOccurrenciesCount(const std::string& originId, const std::string& destinyId) const;
 
         protected:
 

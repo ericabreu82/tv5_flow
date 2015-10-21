@@ -24,7 +24,6 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 #include "Regionalization.h"
-#include "RegionalizationMap.h"
 
 #include "terralib/dataaccess/datasource/DataSourceFactory.h"
 #include "terralib/dataaccess/datasource/DataSourceTransactor.h"
@@ -199,24 +198,57 @@ te::mem::DataSet* te::qt::plugins::fiocruz::Regionalization::cloneDataSet(te::da
   return outputDataSet;
 }
 
-bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(te::mem::DataSet* dataSet, const std::string& originColumn, int minLevel, int maxLevel, const std::string& destinyColumn, const RegionalizationMap& regMap, const std::string& newpropertyName)
+bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const RegionalizationMapParams& params, int minLevel, int maxLevel, const std::string& newPropertyName)
 {
+  te::mem::DataSet* dataSet = params.m_dataSet;
+  te::da::DataSetType* dataSetType = params.m_dataSetType;
+  const std::string& originColumn = params.m_originColumn;
+  const RegionalizationMap& regMap = params.m_regMap;
+
+  te::dt::Property* propertyDominance = new te::dt::StringProperty(newPropertyName, te::dt::STRING, 255, false);
+  dataSetType->add(propertyDominance);
+
+  if (dataSet->moveBeforeFirst() == false)
   {
-    std::string dominanceColumnName = "dom_primaria";
-    te::dt::Property* propertyDominance = new te::dt::StringProperty(dominanceColumnName, te::dt::STRING, 255, false);
-    //outputDataSetType->add(propertyDominance);
+    return false;
   }
+  while (dataSet->moveNext() == true)
   {
-    std::string dominanceColumnName = "dom_secundaria";
-    te::dt::Property* propertyDominance = new te::dt::StringProperty(dominanceColumnName, te::dt::STRING, 255, false);
-    //outputDataSetType->add(propertyDominance);
+    std::string originId = dataSet->getAsString(originColumn);
+    std::string destinyId = regMap.getDominanceId(originId, minLevel, maxLevel);
+
+    te::mem::DataSetItem* item = dataSet->getItem();
+    item->setString(newPropertyName, destinyId);
   }
+ 
+  return true;
+}
+
+bool te::qt::plugins::fiocruz::Regionalization::addOcurrenciesProperty(const RegionalizationMapParams& params, const std::string& destinyId, const std::string& newPropertyName)
+{
+  te::mem::DataSet* dataSet = params.m_dataSet;
+  te::da::DataSetType* dataSetType = params.m_dataSetType;
+  const std::string& originColumn = params.m_originColumn;
+  const RegionalizationMap& regMap = params.m_regMap;
+
+  te::dt::Property* propertyOccurrencies = new te::dt::SimpleProperty(newPropertyName, te::dt::INT32_TYPE);
+  dataSetType->add(propertyOccurrencies);
+
+  if (dataSet->moveBeforeFirst() == false)
   {
-    std::string dominanceColumnName = "dom_terciaria";
-    te::dt::Property* propertyDominance = new te::dt::StringProperty(dominanceColumnName, te::dt::STRING, 255, false);
-    //outputDataSetType->add(propertyDominance);
-    return true;
+    return false;
   }
+
+  while (dataSet->moveNext() == true)
+  {
+    std::string originId = dataSet->getAsString(originColumn);
+    size_t count = regMap.getOccurrenciesCount(originId, destinyId);
+
+    te::mem::DataSetItem* item = dataSet->getItem();
+    item->setInt32(newPropertyName, (int)count);
+  }
+
+  return true;
 }
 
 ////and then we persist

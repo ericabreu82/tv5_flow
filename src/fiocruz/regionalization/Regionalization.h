@@ -26,6 +26,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "../Config.h"
 #include "terralib/dataaccess/dataset/DataSet.h"
 #include "terralib/dataaccess/datasource/DataSource.h"
+#include "RegionalizationMap.h"
 
 #include <map>
 #include <string>
@@ -43,7 +44,20 @@ namespace te
     {
       namespace fiocruz
       {
-        class RegionalizationMap;
+
+        class RegionalizationMapParams
+        {
+          public:
+
+            te::mem::DataSet*       m_dataSet; //!< The dataSet containing the vector information
+            te::da::DataSetType*    m_dataSetType; //!< The dataSet type of the vector dataSet
+            std::string             m_originColumn; //!< The name of the origin column
+            RegionalizationMap      m_regMap; //!< The regionalization map
+
+            //, int minLevel, int maxLevel, const std::string& destinyColumn, , const std::string& newpropertyName
+            
+
+        };
 
 
         /*!
@@ -72,7 +86,9 @@ namespace te
 
           te::mem::DataSet* cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName);
 
-          bool addDominanceProperty(te::mem::DataSet* dataSet, const std::string& originColumn, int minLevel, int maxLevel, const std::string& destinyColumn, const RegionalizationMap& regMap, const std::string& newpropertyName);
+          bool addDominanceProperty(const RegionalizationMapParams& params, int minLevel, int maxLevel, const std::string& newPropertyName);
+
+          bool addOcurrenciesProperty(const RegionalizationMapParams& params, const std::string& destinyId, const std::string& newPropertyName);
         };
       }
     }

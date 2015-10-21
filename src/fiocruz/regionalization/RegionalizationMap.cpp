@@ -78,20 +78,20 @@ bool te::qt::plugins::fiocruz::RegionalizationMap::init(te::da::DataSetPtr dataS
   return true;
 }
 
-bool te::qt::plugins::fiocruz::RegionalizationMap::getDominanceId(const std::string& originId, int minLevel, int maxLevel, std::string& destinyId)
+std::string te::qt::plugins::fiocruz::RegionalizationMap::getDominanceId(const std::string& originId, int minLevel, int maxLevel) const
 {
   //we first calculate the total count of occurencies
-  OriginMap::iterator itOrigin = m_originMap.find(originId);
+  OriginMap::const_iterator itOrigin = m_originMap.find(originId);
   if (itOrigin == m_originMap.end())
   {
-    return false;
+    return "";
   }
 
   size_t totalOcurrencies = 0; //all the ocurrencies from the given originId
 
   //we first count all the occurencies from this origin to all destiny
-  DestinyMap& destinyMap = itOrigin->second;
-  DestinyMap::iterator itDestiny = destinyMap.begin();
+  const DestinyMap& destinyMap = itOrigin->second;
+  DestinyMap::const_iterator itDestiny = destinyMap.begin();
   while (itDestiny != destinyMap.end())
   {
     totalOcurrencies += itDestiny->second;
@@ -102,6 +102,7 @@ bool te::qt::plugins::fiocruz::RegionalizationMap::getDominanceId(const std::str
   //if there are  more then one, we get the one with the highest percentege
   itDestiny = destinyMap.begin();
 
+  std::string destinyId;
   double highestPercentage = 0.;
   while (itDestiny != destinyMap.end())
   {
@@ -118,5 +119,24 @@ bool te::qt::plugins::fiocruz::RegionalizationMap::getDominanceId(const std::str
     ++itDestiny;
   }
 
-  return true;
+  return destinyId;
+}
+
+size_t te::qt::plugins::fiocruz::RegionalizationMap::getOccurrenciesCount(const std::string& originId, const std::string& destinyId) const
+{
+  //we first calculate the total count of occurencies
+  OriginMap::const_iterator itOrigin = m_originMap.find(originId);
+  if (itOrigin == m_originMap.end())
+  {
+    return 0;
+  }
+
+  const DestinyMap& destinyMap = itOrigin->second;
+  DestinyMap::const_iterator itDestiny = destinyMap.find(destinyId);
+  if (itDestiny == destinyMap.end())
+  {
+    return 0;
+  }
+
+  return itDestiny->second;
 }

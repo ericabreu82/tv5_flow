@@ -167,7 +167,7 @@ bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataS
   return true;
 }
 
-te::mem::DataSet* te::qt::plugins::fiocruz::Regionalization::cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName)
+te::qt::plugins::fiocruz::DataSetParams te::qt::plugins::fiocruz::Regionalization::cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName)
 {
   // we first get the information about the input vector DataSet
   std::auto_ptr<te::da::DataSet> inputDataSet = dataSource->getDataSet(dataSetName);
@@ -194,8 +194,12 @@ te::mem::DataSet* te::qt::plugins::fiocruz::Regionalization::cloneDataSet(te::da
 
     outputDataSet->add(dataSetItem);
   }
+
+  DataSetParams dataSetParams;
+  dataSetParams.m_dataSet = outputDataSet;
+  dataSetParams.m_dataSetType = outputDataSetType;
   
-  return outputDataSet;
+  return dataSetParams;
 }
 
 bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams)

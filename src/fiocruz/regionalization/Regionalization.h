@@ -53,10 +53,21 @@ namespace te
             te::da::DataSetType*    m_dataSetType; //!< The dataSet type of the vector dataSet
             std::string             m_originColumn; //!< The name of the origin column
             RegionalizationMap      m_regMap; //!< The regionalization map
+        };
 
-            //, int minLevel, int maxLevel, const std::string& destinyColumn, , const std::string& newpropertyName
-            
+        class DominanceParams
+        {
+          public:
+            int m_minLevel;
+            int m_maxLevel;
+            std::string m_propertyName;
+        };
 
+        class DataSetParams
+        {
+          public:
+            te::mem::DataSet*       m_dataSet; //!< The dataSet
+            te::da::DataSetType*    m_dataSetType; //!< The dataSet type of the dataSet
         };
 
 
@@ -84,11 +95,13 @@ namespace te
 
           bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds);
 
-          te::mem::DataSet* cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName);
+          DataSetParams cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName);
 
-          bool addDominanceProperty(const RegionalizationMapParams& params, int minLevel, int maxLevel, const std::string& newPropertyName);
+          bool addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams);
 
           bool addOcurrenciesProperty(const RegionalizationMapParams& params, const std::string& destinyId, const std::string& newPropertyName);
+
+          bool generate();
         };
       }
     }

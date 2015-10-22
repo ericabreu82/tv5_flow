@@ -198,12 +198,15 @@ te::mem::DataSet* te::qt::plugins::fiocruz::Regionalization::cloneDataSet(te::da
   return outputDataSet;
 }
 
-bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const RegionalizationMapParams& params, int minLevel, int maxLevel, const std::string& newPropertyName)
+bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams)
 {
   te::mem::DataSet* dataSet = params.m_dataSet;
   te::da::DataSetType* dataSetType = params.m_dataSetType;
   const std::string& originColumn = params.m_originColumn;
   const RegionalizationMap& regMap = params.m_regMap;
+  int minLevel = dominanceParams.m_minLevel;
+  int maxLevel = dominanceParams.m_maxLevel;
+  std::string newPropertyName = dominanceParams.m_propertyName;
 
   te::dt::Property* propertyDominance = new te::dt::StringProperty(newPropertyName, te::dt::STRING, 255, false);
   dataSetType->add(propertyDominance);
@@ -251,7 +254,56 @@ bool te::qt::plugins::fiocruz::Regionalization::addOcurrenciesProperty(const Reg
   return true;
 }
 
-////and then we persist
-//std::map<std::string, std::string> mapOptions;
-//dataSource->createDataSet(outputDataSetType, mapOptions);
-//dataSource->add(outputDataSetName, outputDataSet, mapOptions);
+bool te::qt::plugins::fiocruz::Regionalization::generate()
+{
+  //input
+  te::da::DataSourcePtr dataSource;
+  te::da::DataSetPtr inputDataSet;
+  const std::string dataSetName;
+
+  std::string columnOrigin;
+  std::string columnDestiny;
+
+  //output
+  std::string outputDataSetName;
+
+  //we first calculate the regionalization
+  RegionalizationMap regMap;
+  regMap.init(inputDataSet, columnOrigin, columnDestiny);
+
+  //we create the output dataset by cloning the input dataset
+  DataSetParams outputDataSetParams = cloneDataSet(dataSource, dataSetName, outputDataSetName);
+  te::mem::DataSet* outputDataSet = outputDataSetParams.m_dataSet;
+  te::da::DataSetType* outputDataSetType = outputDataSetParams.m_dataSetType;
+
+  //then we add the dominance information
+  RegionalizationMapParams regParams;
+  regParams.m_dataSet = outputDataSet;
+  regParams.m_originColumn = columnOrigin;
+  regParams.m_regMap = regMap;
+
+  std::vector<DominanceParams> vecDominance;
+  for (size_t i = 0; i < vecDominance.size(); ++i)
+  {
+    const DominanceParams& dominanceParams = vecDominance[i];
+    addDominanceProperty(regParams, dominanceParams);
+  }
+
+  //then we add the occurrences information
+  std::vector<std::string> vecIds;
+  getDistinctObjects(dataSource, dataSetName, columnDestiny, vecIds);
+
+  for (size_t i = 0; i < vecIds.size(); ++i)
+  {
+    const std::string& destinyId = vecIds[i];
+    std::string propertyName = ""; //label to be defined
+    addOcurrenciesProperty(regParams, destinyId, propertyName);
+  }
+
+  //we finish by saving all the computed data to the dataSource
+  std::map<std::string, std::string> mapOptions;
+  dataSource->createDataSet(outputDataSetType, mapOptions);
+  dataSource->add(outputDataSetName, outputDataSet, mapOptions);
+
+  return true;
+}

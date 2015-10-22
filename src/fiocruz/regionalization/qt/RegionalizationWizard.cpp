@@ -18,35 +18,38 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 /*!
-\file fiocruz/src/fiocruz/regionalization/RegionalizationVectorWizard.cpp
+\file fiocruz/src/fiocruz/regionalization/RegionalizationWizard.cpp
 
-\brief This file defines the Regionalization Vector Wizard class
+\brief This file defines the Regionalization Wizard class
 */
 
-#include "RegionalizationVectorWizard.h"
+#include "RegionalizationWizard.h"
 
 #include "ExternalTableWizardPage.h"
 #include "LegendWizardPage.h"
 #include "MapWizardPage.h"
+#include "RegionalizationRasterWizardPage.h"
 #include "RegionalizationVectorWizardPage.h"
 
 
-te::qt::plugins::fiocruz::RegionalizationVectorWizard::RegionalizationVectorWizard(QWidget* parent) : QWizard(parent)
+te::qt::plugins::fiocruz::RegionalizationWizard::RegionalizationWizard(QWidget* parent, const RegionalizationType& type) : 
+  QWizard(parent),
+  m_regionalizationType(type)
 {
   //configure the wizard
   this->setWizardStyle(QWizard::ModernStyle);
-  this->setWindowTitle(tr("Reginalization Maps using vectorial representation."));
+  this->setWindowTitle(tr("Reginalization Maps."));
   this->setFixedSize(QSize(740, 580));
 
   addPages();
 }
 
-te::qt::plugins::fiocruz::RegionalizationVectorWizard::~RegionalizationVectorWizard()
+te::qt::plugins::fiocruz::RegionalizationWizard::~RegionalizationWizard()
 {
 
 }
 
-bool te::qt::plugins::fiocruz::RegionalizationVectorWizard::validateCurrentPage()
+bool te::qt::plugins::fiocruz::RegionalizationWizard::validateCurrentPage()
 {
   if (currentPage() == m_externalTablePage.get())
   {
@@ -69,28 +72,41 @@ bool te::qt::plugins::fiocruz::RegionalizationVectorWizard::validateCurrentPage(
   {
     return m_mapPage->isComplete();
   }
-  else if (currentPage() == m_regionalizationPage.get())
+  else if (m_regionalizationType == te::qt::plugins::fiocruz::Vector_Regionalization && currentPage() == m_regionalizationVectorPage.get())
   {
-    return m_regionalizationPage->isComplete();
+    return m_regionalizationVectorPage->isComplete();
+  }
+  else if (m_regionalizationType == te::qt::plugins::fiocruz::Raster_Regionalization && currentPage() == m_regionalizationRasterPage.get())
+  {
+    return m_regionalizationRasterPage->isComplete();
   }
 
   return false;
 }
 
-void te::qt::plugins::fiocruz::RegionalizationVectorWizard::setList(std::list<te::map::AbstractLayerPtr>& layerList)
+void te::qt::plugins::fiocruz::RegionalizationWizard::setList(std::list<te::map::AbstractLayerPtr>& layerList)
 {
   m_externalTablePage->setList(layerList);
 }
 
-void te::qt::plugins::fiocruz::RegionalizationVectorWizard::addPages()
+void te::qt::plugins::fiocruz::RegionalizationWizard::addPages()
 {
   m_externalTablePage.reset(new te::qt::plugins::fiocruz::ExternalTableWizardPage(this));
   m_legendPage.reset(new te::qt::plugins::fiocruz::LegendWizardPage(this));
-  m_regionalizationPage.reset(new te::qt::plugins::fiocruz::RegionalizationVectorWizardPage(this));
   m_mapPage.reset(new te::qt::plugins::fiocruz::MapWizardPage(this));
 
   addPage(m_externalTablePage.get());
   addPage(m_legendPage.get());
   addPage(m_mapPage.get());
-  addPage(m_regionalizationPage.get());
+  
+  if (m_regionalizationType == te::qt::plugins::fiocruz::Vector_Regionalization)
+  {
+    m_regionalizationVectorPage.reset(new te::qt::plugins::fiocruz::RegionalizationVectorWizardPage(this));
+    addPage(m_regionalizationVectorPage.get());
+  }
+  else if (m_regionalizationType == te::qt::plugins::fiocruz::Raster_Regionalization)
+  {
+    m_regionalizationRasterPage.reset(new te::qt::plugins::fiocruz::RegionalizationRasterWizardPage(this));
+    addPage(m_regionalizationRasterPage.get());
+  }
 }

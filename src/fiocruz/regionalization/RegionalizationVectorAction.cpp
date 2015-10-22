@@ -24,7 +24,7 @@
 */
 
 // Fiocruz
-#include "qt/RegionalizationVectorWizard.h"
+#include "qt/RegionalizationWizard.h"
 #include "RegionalizationVectorAction.h"
 
 // Terralib
@@ -55,7 +55,7 @@ void te::qt::plugins::fiocruz::RegionalizationVectorAction::onActionActivated(bo
   te::qt::af::BaseApplication* ba = dynamic_cast<te::qt::af::BaseApplication*>(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow());
 
   //show interface
-  te::qt::plugins::fiocruz::RegionalizationVectorWizard dlg(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow());
+  te::qt::plugins::fiocruz::RegionalizationWizard dlg(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow(), te::qt::plugins::fiocruz::Vector_Regionalization);
 
   dlg.setList(list);
 

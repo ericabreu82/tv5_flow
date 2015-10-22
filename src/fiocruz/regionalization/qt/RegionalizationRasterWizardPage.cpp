@@ -26,6 +26,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "RegionalizationRasterWizardPage.h"
 #include "ui_RegionalizationRasterWizardPageForm.h"
 
+// Terralib
+#include <terralib/sa/Enums.h>
+
 // Qt
 #include <QMessageBox>
 
@@ -41,6 +44,9 @@ m_ui(new Ui::RegionalizationRasterWizardPageForm)
   //configure page
   this->setTitle(tr("Regionalization Raster"));
   this->setSubTitle(tr("Reginalization Maps using raster representation."));
+
+  //fill interface
+  fillKernelParameters();
 }
 
 te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::~RegionalizationRasterWizardPage()
@@ -56,4 +62,23 @@ bool te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::isComplete() con
 void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::setList(std::list<te::map::AbstractLayerPtr>& layerList)
 {
 
+}
+
+void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::fillKernelParameters()
+{
+  //function
+  m_ui->m_functionComboBox->clear();
+
+  m_ui->m_functionComboBox->addItem("Quartic", QVariant(te::sa::Quartic));
+  m_ui->m_functionComboBox->addItem("Normal", QVariant(te::sa::Normal));
+  m_ui->m_functionComboBox->addItem("Triangular", QVariant(te::sa::Triangular));
+  m_ui->m_functionComboBox->addItem("Uniform", QVariant(te::sa::Uniform));
+  m_ui->m_functionComboBox->addItem("Negative Exponential", QVariant(te::sa::Negative_Exp));
+
+  //estimation
+  m_ui->m_estimationComboBox->clear();
+
+  m_ui->m_estimationComboBox->addItem("Density", QVariant(te::sa::Density));
+  m_ui->m_estimationComboBox->addItem("Spatial Moving Average", QVariant(te::sa::Spatial_Moving_Average));
+  m_ui->m_estimationComboBox->addItem("Probability", QVariant(te::sa::Probability));
 }

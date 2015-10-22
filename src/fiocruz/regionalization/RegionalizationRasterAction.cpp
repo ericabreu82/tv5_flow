@@ -24,7 +24,7 @@
 */
 
 // Fiocruz
-#include "qt/RegionalizationRasterWizard.h"
+#include "qt/RegionalizationWizard.h"
 #include "RegionalizationRasterAction.h"
 
 // Terralib
@@ -55,9 +55,9 @@ void te::qt::plugins::fiocruz::RegionalizationRasterAction::onActionActivated(bo
   te::qt::af::BaseApplication* ba = dynamic_cast<te::qt::af::BaseApplication*>(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow());
 
   //show interface
-  te::qt::plugins::fiocruz::RegionalizationRasterWizard dlg(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow());
+  te::qt::plugins::fiocruz::RegionalizationWizard dlg(te::qt::af::AppCtrlSingleton::getInstance().getMainWindow(), te::qt::plugins::fiocruz::Raster_Regionalization);
 
-  //dlg.setLayerList(list);
+  dlg.setList(list);
 
   if(dlg.exec() == QDialog::Accepted)
   {

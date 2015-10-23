@@ -70,6 +70,10 @@ namespace te
 
           void setList(std::list<te::map::AbstractLayerPtr>& layerList);
 
+        protected:
+
+          void fillKernelParameters();
+
         private:
 
           std::auto_ptr<Ui::RegionalizationRasterWizardPageForm> m_ui;

@@ -18,13 +18,13 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 /*!
-\file fiocruz/src/fiocruz/regionalization/RegionalizationRasterWizard.h
+\file fiocruz/src/fiocruz/regionalization/RegionalizationWizard.h
 
-\brief This file defines the Regionalization Raster Wizard class
+\brief This file defines the Regionalization Wizard class
 */
 
-#ifndef __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONRASTERWIZARD_H
-#define __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONRASTERWIZARD_H
+#ifndef __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONWIZARD_H
+#define __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONWIZARD_H
 
 // TerraLib
 #include <terralib/maptools/AbstractLayer.h>
@@ -48,21 +48,28 @@ namespace te
         class ExternalTableWizardPage;
         class LegendWizardPage;
         class MapWizardPage;
+        class RegionalizationVectorWizardPage;
         class RegionalizationRasterWizardPage;
 
-        /*!
-        \class RegionalizationRasterWizard
+        enum RegionalizationType
+        {
+          Raster_Regionalization,
+          Vector_Regionalization
+        };
 
-        \brief This file defines the Regionalization Raster Wizard class
+        /*!
+        \class RegionalizationWizard
+
+        \brief This file defines the Regionalization Wizard class
         */
-        class RegionalizationRasterWizard : public QWizard
+        class RegionalizationWizard : public QWizard
         {
 
         public:
 
-          RegionalizationRasterWizard(QWidget* parent);
+          RegionalizationWizard(QWidget* parent, const RegionalizationType& type);
 
-          ~RegionalizationRasterWizard();
+          ~RegionalizationWizard();
 
         public:
 
@@ -76,16 +83,17 @@ namespace te
 
         private:
 
-          std::auto_ptr<te::qt::plugins::fiocruz::RegionalizationRasterWizardPage> m_regionalizationPage;
+          std::auto_ptr<te::qt::plugins::fiocruz::RegionalizationVectorWizardPage> m_regionalizationVectorPage;
+          std::auto_ptr<te::qt::plugins::fiocruz::RegionalizationRasterWizardPage> m_regionalizationRasterPage;
           std::auto_ptr<te::qt::plugins::fiocruz::MapWizardPage> m_mapPage;
           std::auto_ptr<te::qt::plugins::fiocruz::LegendWizardPage> m_legendPage;
-          std::auto_ptr<te::qt::plugins::fiocruz::ExternalTableWizardPage> m_externalTalbePage;
+          std::auto_ptr<te::qt::plugins::fiocruz::ExternalTableWizardPage> m_externalTablePage;
 
-
+          RegionalizationType m_regionalizationType;
         };
       }   // end namespace fiocruz
     }     // end namespace plugins
   }       // end namespace qt
 }         // end namespace te
 
-#endif  // __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONRASTERWIZARD_H
+#endif  // __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONWIZARD_H

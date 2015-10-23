@@ -44,15 +44,20 @@ namespace te
     {
       namespace fiocruz
       {
+        class DataSetParams
+        {
+          public:
+            te::mem::DataSet*       m_dataSet; //!< The dataSet
+            te::da::DataSetType*    m_dataSetType; //!< The dataSet type of the dataSet
+        };
 
         class RegionalizationMapParams
         {
           public:
 
-            te::mem::DataSet*       m_dataSet; //!< The dataSet containing the vector information
-            te::da::DataSetType*    m_dataSetType; //!< The dataSet type of the vector dataSet
-            std::string             m_originColumn; //!< The name of the origin column
-            RegionalizationMap      m_regMap; //!< The regionalization map
+            DataSetParams          m_dataSetParams; //!< The dataSet containing the vector information
+            std::string            m_originColumn; //!< The name of the origin column
+            RegionalizationMap     m_regMap; //!< The regionalization map
         };
 
         class DominanceParams
@@ -61,13 +66,6 @@ namespace te
             int m_minLevel;
             int m_maxLevel;
             std::string m_propertyName;
-        };
-
-        class DataSetParams
-        {
-          public:
-            te::mem::DataSet*       m_dataSet; //!< The dataSet
-            te::da::DataSetType*    m_dataSetType; //!< The dataSet type of the dataSet
         };
 
 
@@ -94,6 +92,8 @@ namespace te
           te::da::DataSetPtr createMercadoDataSet(const std::string& originColumn, const std::string& destinyColumn, MercadoMap& mercadoMap);
 
           bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds);
+
+          bool getAliasMap(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnId, const std::string& columnAlias, std::map<std::string, std::string>& mapAlias);
 
           DataSetParams cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName);
 

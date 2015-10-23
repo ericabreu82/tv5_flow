@@ -50,6 +50,117 @@ te::qt::plugins::fiocruz::Regionalization::~Regionalization()
 
 }
 
+bool te::qt::plugins::fiocruz::Regionalization::generate()
+{
+  assert(m_inputParams.get());
+  assert(m_outputParams.get());
+
+  //input vector data
+  te::da::DataSourcePtr iVectorDataSource = m_inputParams->m_iVectorDataSource;
+  te::da::DataSetPtr iVectorDataSet = m_inputParams->m_iVectorDataSet;
+  std::string iVectorDataSetName = m_inputParams->m_iVectorDataSetName;
+
+  std::string iVectorColumnOriginId = m_inputParams->m_iVectorColumnOriginId;
+
+  //input tabular data
+  te::da::DataSourcePtr iTabularDataSource = m_inputParams->m_iTabularDataSource;
+  te::da::DataSetPtr iTabularDataSet = m_inputParams->m_iTabularDataSet;
+  std::string iTabularDataSetName = m_inputParams->m_iTabularDataSetName;
+
+  std::string iTabularColumnOriginId = m_inputParams->m_iTabularColumnOriginId;
+  std::string iTabularColumnDestinyId = m_inputParams->m_iTabularColumnDestinyId;
+  std::string iTabularColumnDestinyAlias = m_inputParams->m_iTabularColumnDestinyAlias;
+
+  //output vector data
+  te::da::DataSourcePtr oDataSource = m_outputParams->m_oDataSource;
+  std::string oDataSetName = m_outputParams->m_oDataSetName;
+  std::string oVectorColumnOriginId = iVectorColumnOriginId;
+
+  //we first calculate the regionalization
+  RegionalizationMap regMap;
+  regMap.init(iTabularDataSet, iTabularColumnOriginId, iTabularColumnDestinyId);
+
+  //we create the output dataset by cloning the input dataset
+  DataSetParams oDataSetParams = cloneDataSet(iVectorDataSource, iVectorDataSetName, oDataSetName);
+  te::mem::DataSet* oDataSet = oDataSetParams.m_dataSet;
+  te::da::DataSetType* oDataSetType = oDataSetParams.m_dataSetType;
+
+  //then we add the dominance information
+  RegionalizationMapParams regParams;
+  regParams.m_dataSetParams = oDataSetParams;
+  regParams.m_originColumn = oVectorColumnOriginId;
+  regParams.m_regMap = regMap;
+
+  std::vector<DominanceParams> vecDominance;
+  for (size_t i = 0; i < vecDominance.size(); ++i)
+  {
+    const DominanceParams& dominanceParams = vecDominance[i];
+    addDominanceProperty(regParams, dominanceParams);
+  }
+
+  //then we add the occurrences information
+  std::vector<std::string> vecIds;
+  getDistinctObjects(iTabularDataSource, iTabularDataSetName, iTabularColumnDestinyId, vecIds);
+
+  std::map<std::string, std::string> mapAlias;
+  getAliasMap(iTabularDataSource, iTabularDataSetName, iTabularColumnDestinyId, iTabularColumnDestinyAlias, mapAlias);
+
+  for (size_t i = 0; i < vecIds.size(); ++i)
+  {
+    const std::string& destinyId = vecIds[i];
+    std::string propertyName = mapAlias[destinyId];
+    addOcurrenciesProperty(regParams, destinyId, propertyName);
+  }
+
+  //we finish by saving all the computed data to the dataSource
+  std::map<std::string, std::string> mapOptions;
+  oDataSource->createDataSet(oDataSetType, mapOptions);
+  oDataSource->add(oDataSetName, oDataSet, mapOptions);
+
+  return true;
+}
+
+void te::qt::plugins::fiocruz::Regionalization::setInputParameters(RegionalizationInputParams* inParams)
+{
+  m_inputParams.reset(inParams);
+}
+
+void te::qt::plugins::fiocruz::Regionalization::setOutputParameters(RegionalizationOutputParams* outParams)
+{
+  m_outputParams.reset(outParams);
+}
+
+bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds)
+{
+  vecIds.clear();
+
+  te::da::Expression* expression = new te::da::PropertyName(columnName);
+
+  te::da::Distinct* distinct = new te::da::Distinct;
+  distinct->push_back(expression);
+
+  te::da::FromItem* fromItem = new te::da::DataSetName(dataSetName);
+  te::da::From* from = new te::da::From;
+  from->push_back(fromItem);
+
+  te::da::Select select;
+  select.setDistinct(distinct);
+  select.setFrom(from);
+
+  std::auto_ptr<te::da::DataSet> dataSet = dataSource->query(select);
+  if (dataSet->moveBeforeFirst() == false)
+  {
+    return false;
+  }
+
+  while (dataSet->moveNext())
+  {
+    vecIds.push_back(dataSet->getString(0));
+  }
+
+  return true;
+}
+
 te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::readFile(const std::string& fileName)
 {
   std::map<std::string, std::string> connInfo;
@@ -134,37 +245,6 @@ te::da::DataSetPtr te::qt::plugins::fiocruz::Regionalization::createMercadoDataS
 
   te::da::DataSetPtr dataSetPtr(dataSet);
   return dataSetPtr;
-}
-
-bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds)
-{
-  vecIds.clear();
-
-  te::da::Expression* expression = new te::da::PropertyName(columnName);
-
-  te::da::Distinct* distinct = new te::da::Distinct;
-  distinct->push_back(expression);
-
-  te::da::FromItem* fromItem = new te::da::DataSetName(dataSetName);
-  te::da::From* from = new te::da::From;
-  from->push_back(fromItem);
-
-  te::da::Select select;
-  select.setDistinct(distinct);
-  select.setFrom(from);
-
-  std::auto_ptr<te::da::DataSet> dataSet = dataSource->query(select);
-  if (dataSet->moveBeforeFirst() == false)
-  {
-    return false;
-  }
-
-  while (dataSet->moveNext())
-  {
-    vecIds.push_back(dataSet->getString(0));
-  }
-
-  return true;
 }
 
 bool te::qt::plugins::fiocruz::Regionalization::getAliasMap(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnId, const std::string& columnAlias, std::map<std::string, std::string>& mapAlias)
@@ -292,69 +372,3 @@ bool te::qt::plugins::fiocruz::Regionalization::addOcurrenciesProperty(const Reg
   return true;
 }
 
-bool te::qt::plugins::fiocruz::Regionalization::generate()
-{
-  //input vector data
-  te::da::DataSourcePtr iVectorDataSource;
-  te::da::DataSetPtr iVectorDataSet;
-  std::string iVectorDataSetName;
-
-  std::string iVectorColumnOriginId;
-
-  //input tabular data
-  te::da::DataSourcePtr iTabularDataSource;
-  te::da::DataSetPtr iTabularDataSet;
-  std::string iTabularDataSetName;
-
-  std::string iTabularColumnOriginId;
-  std::string iTabularColumnDestinyId;
-  std::string iTabularColumnDestinyAlias;
-
-  //output vector data
-  te::da::DataSourcePtr oDataSource;
-  std::string oDataSetName;
-  std::string oVectorColumnOriginId = iVectorColumnOriginId;
-
-  //we first calculate the regionalization
-  RegionalizationMap regMap;
-  regMap.init(iTabularDataSet, iTabularColumnOriginId, iTabularColumnDestinyId);
-
-  //we create the output dataset by cloning the input dataset
-  DataSetParams oDataSetParams = cloneDataSet(iVectorDataSource, iVectorDataSetName, oDataSetName);
-  te::mem::DataSet* oDataSet = oDataSetParams.m_dataSet;
-  te::da::DataSetType* oDataSetType = oDataSetParams.m_dataSetType;
-
-  //then we add the dominance information
-  RegionalizationMapParams regParams;
-  regParams.m_dataSetParams = oDataSetParams;
-  regParams.m_originColumn = oVectorColumnOriginId;
-  regParams.m_regMap = regMap;
-
-  std::vector<DominanceParams> vecDominance;
-  for (size_t i = 0; i < vecDominance.size(); ++i)
-  {
-    const DominanceParams& dominanceParams = vecDominance[i];
-    addDominanceProperty(regParams, dominanceParams);
-  }
-
-  //then we add the occurrences information
-  std::vector<std::string> vecIds;
-  getDistinctObjects(iTabularDataSource, iTabularDataSetName, iTabularColumnDestinyId, vecIds);
-
-  std::map<std::string, std::string> mapAlias;
-  getAliasMap(iTabularDataSource, iTabularDataSetName, iTabularColumnDestinyId, iTabularColumnDestinyAlias, mapAlias);
-
-  for (size_t i = 0; i < vecIds.size(); ++i)
-  {
-    const std::string& destinyId = vecIds[i];
-    std::string propertyName = mapAlias[destinyId];
-    addOcurrenciesProperty(regParams, destinyId, propertyName);
-  }
-
-  //we finish by saving all the computed data to the dataSource
-  std::map<std::string, std::string> mapOptions;
-  oDataSource->createDataSet(oDataSetType, mapOptions);
-  oDataSource->add(oDataSetName, oDataSet, mapOptions);
-
-  return true;
-}

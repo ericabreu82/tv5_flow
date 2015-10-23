@@ -68,6 +68,67 @@ namespace te
             std::string m_propertyName;
         };
 
+        class RegionalizationInputParams
+        {
+          public:
+
+            RegionalizationInputParams()
+            {
+              m_iVectorDataSetName = "";
+              m_iVectorColumnOriginId = "";
+              m_iTabularDataSetName = "";
+              m_iTabularColumnOriginId = "";
+              m_iTabularColumnDestinyId = "";
+              m_iTabularColumnDestinyAlias = "";
+            }
+
+            ~RegionalizationInputParams()
+            {
+
+            }
+
+          public:
+
+            //input vector data
+            te::da::DataSourcePtr     m_iVectorDataSource;
+            te::da::DataSetPtr        m_iVectorDataSet;
+            std::string               m_iVectorDataSetName;
+
+            std::string               m_iVectorColumnOriginId;
+
+            //input tabular data
+            te::da::DataSourcePtr     m_iTabularDataSource;
+            te::da::DataSetPtr        m_iTabularDataSet;
+            std::string               m_iTabularDataSetName;
+
+            std::string               m_iTabularColumnOriginId;
+            std::string               m_iTabularColumnDestinyId;
+            std::string               m_iTabularColumnDestinyAlias;
+
+        };
+
+        class RegionalizationOutputParams
+        {
+          public:
+
+            RegionalizationOutputParams()
+            {
+              m_oDataSetName = "";
+              m_oVectorColumnOriginId = "";
+            }
+
+            ~RegionalizationOutputParams()
+            {
+
+            }
+
+          public:
+
+            te::da::DataSourcePtr     m_oDataSource;
+            std::string               m_oDataSetName;
+            std::string               m_oVectorColumnOriginId;
+        };
+
 
         /*!
         \class AbstractAction
@@ -77,31 +138,43 @@ namespace te
         */
         class Regionalization
         {
-          typedef std::map<std::string, std::size_t> OriginMap;
-          typedef std::map<std::string, OriginMap> MercadoMap;
+            typedef std::map<std::string, std::size_t> OriginMap;
+            typedef std::map<std::string, OriginMap> MercadoMap;
 
 
-        public:
+          public:
 
-          Regionalization();
+            Regionalization();
 
-          virtual ~Regionalization();
+            virtual ~Regionalization();
 
-          te::da::DataSetPtr readFile(const std::string& fileName);
+            bool generate();
 
-          te::da::DataSetPtr createMercadoDataSet(const std::string& originColumn, const std::string& destinyColumn, MercadoMap& mercadoMap);
+            void setInputParameters(RegionalizationInputParams* inParams);
 
-          bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds);
+            void setOutputParameters(RegionalizationOutputParams* outParams);
 
-          bool getAliasMap(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnId, const std::string& columnAlias, std::map<std::string, std::string>& mapAlias);
+            bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds);
 
-          DataSetParams cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName);
+          protected:
 
-          bool addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams);
+            te::da::DataSetPtr readFile(const std::string& fileName);
 
-          bool addOcurrenciesProperty(const RegionalizationMapParams& params, const std::string& destinyId, const std::string& newPropertyName);
+            te::da::DataSetPtr createMercadoDataSet(const std::string& originColumn, const std::string& destinyColumn, MercadoMap& mercadoMap);
 
-          bool generate();
+            bool getAliasMap(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnId, const std::string& columnAlias, std::map<std::string, std::string>& mapAlias);
+
+            DataSetParams cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName);
+
+            bool addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams);
+
+            bool addOcurrenciesProperty(const RegionalizationMapParams& params, const std::string& destinyId, const std::string& newPropertyName);
+
+          protected:
+
+            std::auto_ptr<RegionalizationInputParams> m_inputParams;          //!< Regionalization input parameters.
+
+            std::auto_ptr<RegionalizationOutputParams> m_outputParams;        //!< Regionalization output parameters.
         };
       }
     }

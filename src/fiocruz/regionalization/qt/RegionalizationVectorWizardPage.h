@@ -27,8 +27,8 @@ TerraLib Team at <terralib-team@terralib.org>.
 #define __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONVECTORWIZARDPAGE_H
 
 // TerraLib
+#include <terralib/dataaccess/datasource/DataSourceInfo.h>
 #include <terralib/maptools/AbstractLayer.h>
-#include "../../Config.h"
 
 // STL
 #include <memory>
@@ -48,6 +48,7 @@ namespace te
     {
       namespace fiocruz
       {
+        class RegionalizationOutputParams;
 
         /*!
         \class RegionalizationVectorWizardPage
@@ -68,12 +69,19 @@ namespace te
 
         public:
 
-          void setList(std::list<te::map::AbstractLayerPtr>& layerList);
+          te::qt::plugins::fiocruz::RegionalizationOutputParams* getRegionalizationOutputParameters();
+
+        protected slots:
+
+          void onTargetDatasourceToolButtonPressed();
+
+          void onTargetFileToolButtonPressed();
 
         private:
 
           std::auto_ptr<Ui::RegionalizationVectorWizardPageForm> m_ui;
 
+          te::da::DataSourceInfoPtr m_outputDatasource;
         };
       }   // end namespace fiocruz
     }     // end namespace plugins

@@ -123,6 +123,64 @@ std::vector<std::string> te::qt::plugins::fiocruz::ExternalTableWizardPage::getU
   return values;
 }
 
+te::qt::plugins::fiocruz::RegionalizationInputParams* te::qt::plugins::fiocruz::ExternalTableWizardPage::getRegionalizationInputParameters()
+{
+  //get vectorial layer
+  te::map::DataSetLayer* dsVecLayer = 0;
+
+  QVariant varVecLayer = m_ui->m_spatialLayerComboBox->currentData(Qt::UserRole);
+
+  if (varVecLayer.isValid())
+  {
+    te::map::AbstractLayerPtr l = varVecLayer.value<te::map::AbstractLayerPtr>();
+
+    dsVecLayer = dynamic_cast<te::map::DataSetLayer*>(l.get());
+  }
+
+  if (!dsVecLayer)
+    throw;
+
+  std::auto_ptr<te::da::DataSetType> dsVecType = dsVecLayer->getSchema();
+
+  //get tabular layer
+  te::map::DataSetLayer* dsTabLayer = 0;
+
+  QVariant varTabLayer = m_ui->m_tabularLayerComboBox->currentData(Qt::UserRole);
+
+  if (varTabLayer.isValid())
+  {
+    te::map::AbstractLayerPtr l = varTabLayer.value<te::map::AbstractLayerPtr>();
+
+    dsTabLayer = dynamic_cast<te::map::DataSetLayer*>(l.get());
+  }
+
+  if (!dsTabLayer)
+    throw;
+
+  std::auto_ptr<te::da::DataSetType> dsTabType = dsVecLayer->getSchema();
+
+  //set parameters
+  te::qt::plugins::fiocruz::RegionalizationInputParams* params = new te::qt::plugins::fiocruz::RegionalizationInputParams();
+
+  //input vector data
+  params->m_iVectorDataSource = te::da::GetDataSource(dsVecLayer->getDataSourceId());
+  params->m_iVectorDataSet = dsVecLayer->getData();
+  params->m_iVectorDataSetName = dsVecType->getTitle();
+
+  params->m_iVectorColumnOriginId = m_ui->m_spatialPropertyComboBox->currentText().toStdString();
+
+  //input tabular data
+  params->m_iTabularDataSource = te::da::GetDataSource(dsTabLayer->getDataSourceId());
+  params->m_iTabularDataSet = dsTabLayer->getData();
+  params->m_iTabularDataSetName = dsTabType->getTitle();
+
+  params->m_iTabularColumnOriginId = m_ui->m_tabularLinkPropComboBox->currentText().toStdString();
+  params->m_iTabularColumnDestinyId = m_ui->m_tabularObjIdComboBox->currentText().toStdString();
+  params->m_iTabularColumnDestinyAlias = m_ui->m_tabularObjNameComboBox->currentText().toStdString();
+
+  return params;
+}
+
 void te::qt::plugins::fiocruz::ExternalTableWizardPage::onSpatialLayerComboBoxActivated(int index)
 {
   QVariant varLayer = m_ui->m_spatialLayerComboBox->itemData(index, Qt::UserRole);

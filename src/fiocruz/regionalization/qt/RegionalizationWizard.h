@@ -81,6 +81,8 @@ namespace te
 
           void addPages();
 
+          bool executeVectorRegionalization();
+
         private:
 
           std::auto_ptr<te::qt::plugins::fiocruz::RegionalizationVectorWizardPage> m_regionalizationVectorPage;

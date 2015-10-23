@@ -48,6 +48,7 @@ namespace te
     {
       namespace fiocruz
       {
+        class RegionalizationInputParams;
 
         /*!
           \class ExternalTableWizardPage
@@ -71,6 +72,8 @@ namespace te
           void setList(std::list<te::map::AbstractLayerPtr>& layerList);
 
           std::vector<std::string> getUniqueObjects();
+
+          te::qt::plugins::fiocruz::RegionalizationInputParams* getRegionalizationInputParameters();
 
         public slots:
 

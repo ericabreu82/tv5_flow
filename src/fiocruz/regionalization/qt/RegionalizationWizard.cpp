@@ -23,6 +23,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 \brief This file defines the Regionalization Wizard class
 */
 
+#include "../Regionalization.h"
 #include "RegionalizationWizard.h"
 
 #include "ExternalTableWizardPage.h"
@@ -74,7 +75,10 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::validateCurrentPage()
   }
   else if (m_regionalizationType == te::qt::plugins::fiocruz::Vector_Regionalization && currentPage() == m_regionalizationVectorPage.get())
   {
-    return m_regionalizationVectorPage->isComplete();
+    if (!m_regionalizationVectorPage->isComplete())
+      return false;
+
+    return executeVectorRegionalization();
   }
   else if (m_regionalizationType == te::qt::plugins::fiocruz::Raster_Regionalization && currentPage() == m_regionalizationRasterPage.get())
   {
@@ -109,4 +113,25 @@ void te::qt::plugins::fiocruz::RegionalizationWizard::addPages()
     m_regionalizationRasterPage.reset(new te::qt::plugins::fiocruz::RegionalizationRasterWizardPage(this));
     addPage(m_regionalizationRasterPage.get());
   }
+}
+
+bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalization()
+{
+  te::qt::plugins::fiocruz::Regionalization reg;
+
+  reg.setInputParameters(m_externalTablePage->getRegionalizationInputParameters());
+  reg.setOutputParameters(m_regionalizationVectorPage->getRegionalizationOutputParameters());
+
+  bool res = false;
+
+  try
+  {
+    res = reg.generate();
+  }
+  catch (...)
+  {
+    return false;
+  }
+
+  return res;
 }

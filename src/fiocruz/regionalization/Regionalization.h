@@ -105,6 +105,9 @@ namespace te
             std::string               m_iTabularColumnDestinyId;
             std::string               m_iTabularColumnDestinyAlias;
 
+            //input dominance params
+            std::vector<DominanceParams> m_vecDominance;
+
         };
 
         class RegionalizationOutputParams

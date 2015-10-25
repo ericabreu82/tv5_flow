@@ -58,23 +58,26 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
   //input vector data
   te::da::DataSourcePtr iVectorDataSource = m_inputParams->m_iVectorDataSource;
   te::da::DataSetPtr iVectorDataSet = m_inputParams->m_iVectorDataSet;
-  std::string iVectorDataSetName = m_inputParams->m_iVectorDataSetName;
+  const std::string& iVectorDataSetName = m_inputParams->m_iVectorDataSetName;
 
-  std::string iVectorColumnOriginId = m_inputParams->m_iVectorColumnOriginId;
+  const std::string& iVectorColumnOriginId = m_inputParams->m_iVectorColumnOriginId;
 
   //input tabular data
   te::da::DataSourcePtr iTabularDataSource = m_inputParams->m_iTabularDataSource;
   te::da::DataSetPtr iTabularDataSet = m_inputParams->m_iTabularDataSet;
-  std::string iTabularDataSetName = m_inputParams->m_iTabularDataSetName;
+  const std::string& iTabularDataSetName = m_inputParams->m_iTabularDataSetName;
 
-  std::string iTabularColumnOriginId = m_inputParams->m_iTabularColumnOriginId;
-  std::string iTabularColumnDestinyId = m_inputParams->m_iTabularColumnDestinyId;
-  std::string iTabularColumnDestinyAlias = m_inputParams->m_iTabularColumnDestinyAlias;
+  const std::string& iTabularColumnOriginId = m_inputParams->m_iTabularColumnOriginId;
+  const std::string& iTabularColumnDestinyId = m_inputParams->m_iTabularColumnDestinyId;
+  const std::string& iTabularColumnDestinyAlias = m_inputParams->m_iTabularColumnDestinyAlias;
+
+  //dominance params
+  const std::vector<DominanceParams>& vecDominance = m_inputParams->m_vecDominance;
 
   //output vector data
   te::da::DataSourcePtr oDataSource = m_outputParams->m_oDataSource;
-  std::string oDataSetName = m_outputParams->m_oDataSetName;
-  std::string oVectorColumnOriginId = iVectorColumnOriginId;
+  const std::string& oDataSetName = m_outputParams->m_oDataSetName;
+  const std::string& oVectorColumnOriginId = iVectorColumnOriginId;
 
   //we first calculate the regionalization
   RegionalizationMap regMap;
@@ -91,7 +94,6 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
   regParams.m_originColumn = oVectorColumnOriginId;
   regParams.m_regMap = regMap;
 
-  std::vector<DominanceParams> vecDominance;
   for (size_t i = 0; i < vecDominance.size(); ++i)
   {
     const DominanceParams& dominanceParams = vecDominance[i];
@@ -251,19 +253,23 @@ bool te::qt::plugins::fiocruz::Regionalization::getAliasMap(te::da::DataSourcePt
 {
   mapAlias.clear();
 
-  te::da::Expression* expression1 = new te::da::PropertyName(columnId);
-  te::da::Expression* expression2 = new te::da::PropertyName(columnAlias);
+  //OGR does not support the use of two columns in a distinct clause
+  //for this reason, we use a map to discard the repeated values
 
-  te::da::Distinct* distinct = new te::da::Distinct;
-  distinct->push_back(expression1);
-  distinct->push_back(expression2);
+  te::da::Field* expression1 = new te::da::Field(columnId);
+  te::da::Field* expression2 = new te::da::Field(columnAlias);
+
+  te::da::Fields* fields = new te::da::Fields();
+  fields->push_back(expression1);
+  fields->push_back(expression2);
+
 
   te::da::FromItem* fromItem = new te::da::DataSetName(dataSetName);
   te::da::From* from = new te::da::From;
   from->push_back(fromItem);
 
   te::da::Select select;
-  select.setDistinct(distinct);
+  select.fields(fields);
   select.setFrom(from);
 
   std::auto_ptr<te::da::DataSet> dataSet = dataSource->query(select);
@@ -274,8 +280,8 @@ bool te::qt::plugins::fiocruz::Regionalization::getAliasMap(te::da::DataSourcePt
 
   while (dataSet->moveNext())
   {
-    std::string id = dataSet->getString(0);
-    std::string alias = dataSet->getString(1);
+    std::string id = dataSet->getString(columnId);
+    std::string alias = dataSet->getString(columnAlias);
     mapAlias[id] = alias;
   }
   return true;

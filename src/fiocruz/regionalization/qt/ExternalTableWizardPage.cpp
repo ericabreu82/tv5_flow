@@ -157,7 +157,7 @@ te::qt::plugins::fiocruz::RegionalizationInputParams* te::qt::plugins::fiocruz::
   if (!dsTabLayer)
     throw;
 
-  std::auto_ptr<te::da::DataSetType> dsTabType = dsVecLayer->getSchema();
+  std::auto_ptr<te::da::DataSetType> dsTabType = dsTabLayer->getSchema();
 
   //set parameters
   te::qt::plugins::fiocruz::RegionalizationInputParams* params = new te::qt::plugins::fiocruz::RegionalizationInputParams();
@@ -177,6 +177,9 @@ te::qt::plugins::fiocruz::RegionalizationInputParams* te::qt::plugins::fiocruz::
   params->m_iTabularColumnOriginId = m_ui->m_tabularLinkPropComboBox->currentText().toStdString();
   params->m_iTabularColumnDestinyId = m_ui->m_tabularObjIdComboBox->currentText().toStdString();
   params->m_iTabularColumnDestinyAlias = m_ui->m_tabularObjNameComboBox->currentText().toStdString();
+
+  //dominance params
+  
 
   return params;
 }

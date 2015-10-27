@@ -113,6 +113,8 @@ void te::qt::plugins::fiocruz::RegionalizationVectorWizardPage::onTargetDatasour
   m_ui->m_repositoryLineEdit->setText(QString(it->get()->getTitle().c_str()));
 
   m_outputDatasource = *it;
+
+  emit completeChanged();
 }
 
 void te::qt::plugins::fiocruz::RegionalizationVectorWizardPage::onTargetFileToolButtonPressed()
@@ -154,4 +156,6 @@ void te::qt::plugins::fiocruz::RegionalizationVectorWizardPage::onTargetFileTool
   te::da::DataSourceInfoManager::getInstance().add(dsInfoPtr);
 
   m_outputDatasource = dsInfoPtr;
+
+  emit completeChanged();
 }

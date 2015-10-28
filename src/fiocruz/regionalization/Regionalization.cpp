@@ -36,7 +36,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "terralib/dataaccess/query/Expression.h"
 #include "terralib/dataaccess/query/PropertyName.h"
 
+#include "terralib/datatype/SimpleData.h"
 #include "terralib/datatype/StringProperty.h"
+
+#include "terralib/dataaccess/dataset/ObjectId.h"
+#include "terralib/dataaccess/dataset/ObjectIdSet.h"
 
 #include "terralib/memory/DataSet.h"
 #include "terralib/memory/DataSetItem.h"
@@ -85,8 +89,14 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
 
   //we create the output dataset by cloning the input dataset
   DataSetParams oDataSetParams = cloneDataSet(iVectorDataSource, iVectorDataSetName, oDataSetName);
+  oDataSetParams.m_dataSource = oDataSource;
   te::mem::DataSet* oDataSet = oDataSetParams.m_dataSet;
   te::da::DataSetType* oDataSetType = oDataSetParams.m_dataSetType;
+
+  //we now save the cloned dataSet on the dataSource
+  std::map<std::string, std::string> mapOptions;
+  oDataSource->createDataSet(oDataSetType, mapOptions);
+  oDataSource->add(oDataSetName, oDataSet, mapOptions);
 
   //then we add the dominance information
   RegionalizationMapParams regParams;
@@ -104,20 +114,15 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
   std::vector<std::string> vecIds;
   getDistinctObjects(iTabularDataSource, iTabularDataSetName, iTabularColumnDestinyId, vecIds);
 
-  std::map<std::string, std::string> mapAlias;
-  getAliasMap(iTabularDataSource, iTabularDataSetName, iTabularColumnDestinyId, iTabularColumnDestinyAlias, mapAlias);
+  //std::map<std::string, std::string> mapAlias;
+  //getAliasMap(iTabularDataSource, iTabularDataSetName, iTabularColumnDestinyId, iTabularColumnDestinyAlias, mapAlias);
 
   for (size_t i = 0; i < vecIds.size(); ++i)
   {
     const std::string& destinyId = vecIds[i];
-    std::string propertyName = mapAlias[destinyId];
+    std::string propertyName = destinyId;
     addOcurrenciesProperty(regParams, destinyId, propertyName);
   }
-
-  //we finish by saving all the computed data to the dataSource
-  std::map<std::string, std::string> mapOptions;
-  oDataSource->createDataSet(oDataSetType, mapOptions);
-  oDataSource->add(oDataSetName, oDataSet, mapOptions);
 
   return true;
 }
@@ -318,35 +323,61 @@ te::qt::plugins::fiocruz::DataSetParams te::qt::plugins::fiocruz::Regionalizatio
   DataSetParams dataSetParams;
   dataSetParams.m_dataSet = outputDataSet;
   dataSetParams.m_dataSetType = outputDataSetType;
+  dataSetParams.m_dataSetName = outputDataSetName;
   
   return dataSetParams;
 }
 
 bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams)
 {
-  te::mem::DataSet* dataSet = params.m_dataSetParams.m_dataSet;
-  te::da::DataSetType* dataSetType = params.m_dataSetParams.m_dataSetType;
+  te::da::DataSourcePtr dataSource = params.m_dataSetParams.m_dataSource;
+  std::string dataSetName = params.m_dataSetParams.m_dataSetName;
+
   const std::string& originColumn = params.m_originColumn;
   const RegionalizationMap& regMap = params.m_regMap;
   int minLevel = dominanceParams.m_minLevel;
   int maxLevel = dominanceParams.m_maxLevel;
   std::string newPropertyName = dominanceParams.m_propertyName;
 
+  //adds the column to the output dataSet
   te::dt::Property* propertyDominance = new te::dt::StringProperty(newPropertyName, te::dt::STRING, 255, false);
+  dataSource->addProperty(dataSetName, propertyDominance);
+
+  //now we must create a new memory dataSet to be used to update the dominance data into the output DataSet
+  te::da::DataSetType* dataSetType = new te::da::DataSetType(dataSetName);
   dataSetType->add(propertyDominance);
 
-  if (dataSet->moveBeforeFirst() == false)
+  te::da::ObjectIdSet setOids;
+  te::mem::DataSet* dataSet = new te::mem::DataSet(dataSetType);
+  std::vector<size_t> vecProperties;
+  vecProperties.push_back(0);
+
+  //for each origin, we calculate the dominance and add the information into the dataSet
+  std::vector<std::string> vecOrigins = regMap.getOriginIds();
+
+  for (size_t i = 0; i < vecOrigins.size(); ++i)
   {
-    return false;
-  }
-  while (dataSet->moveNext() == true)
-  {
-    std::string originId = dataSet->getAsString(originColumn);
+    std::string originId = vecOrigins[i];
     std::string destinyId = regMap.getDominanceId(originId, minLevel, maxLevel);
 
-    te::mem::DataSetItem* item = dataSet->getItem();
-    item->setString(newPropertyName, destinyId);
+    te::mem::DataSetItem* item = new te::mem::DataSetItem(dataSet);
+    item->setString(0, destinyId);
+
+    te::dt::String* data = new te::dt::String(originId);
+
+    te::da::ObjectId* oid = new te::da::ObjectId();
+
+    oid->addValue(data);
+    setOids.add(oid);
+
+    dataSet->add(item);
   }
+
+  //we finally persist the data by updating it into the dataSource
+  std::map<std::string, std::string> mapOptions;
+  dataSource->update(dataSetName, dataSet, vecProperties, &setOids, mapOptions);
+
+  delete dataSet;
  
   return true;
 }

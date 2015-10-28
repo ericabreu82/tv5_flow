@@ -59,6 +59,8 @@ namespace te
 
           size_t getOccurrenciesCount(const std::string& originId, const std::string& destinyId) const;
 
+          std::vector<std::string> getOriginIds() const;
+
         protected:
 
           OriginMap m_originMap;

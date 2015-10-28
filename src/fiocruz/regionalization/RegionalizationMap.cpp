@@ -140,3 +140,17 @@ size_t te::qt::plugins::fiocruz::RegionalizationMap::getOccurrenciesCount(const 
 
   return itDestiny->second;
 }
+
+std::vector<std::string> te::qt::plugins::fiocruz::RegionalizationMap::getOriginIds() const
+{
+  std::vector<std::string> vecOrigins;
+
+  OriginMap::const_iterator itOrigin = m_originMap.begin();
+  while (itOrigin != m_originMap.end())
+  {
+    vecOrigins.push_back(itOrigin->first);
+  }
+
+  return vecOrigins;
+}
+

@@ -47,8 +47,10 @@ namespace te
         class DataSetParams
         {
           public:
+            te::da::DataSourcePtr   m_dataSource; //The dataSource
             te::mem::DataSet*       m_dataSet; //!< The dataSet
             te::da::DataSetType*    m_dataSetType; //!< The dataSet type of the dataSet
+            std::string             m_dataSetName;
         };
 
         class RegionalizationMapParams

@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <layout class="QGridLayout" name="gridLayout_14">
      <item row="0" column="0">
-      <widget class="QGroupBox" name="groupBox">
+      <widget class="QGroupBox" name="m_primaryGroupBox">
        <property name="title">
         <string>Primary Dominance</string>
        </property>
@@ -163,7 +163,7 @@
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QGroupBox" name="groupBox_2">
+      <widget class="QGroupBox" name="m_secondaryGroupBox">
        <property name="title">
         <string>Secondary Dominance</string>
        </property>
@@ -309,7 +309,7 @@
       </widget>
      </item>
      <item row="2" column="0">
-      <widget class="QGroupBox" name="groupBox_3">
+      <widget class="QGroupBox" name="m_tertiaryGroupBox">
        <property name="title">
         <string>Tertiary Dominance</string>
        </property>
@@ -538,13 +538,13 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>groupBox</tabstop>
+  <tabstop>m_primaryGroupBox</tabstop>
   <tabstop>m_minPrimarySpinBox</tabstop>
   <tabstop>m_maxPrimarySpinBox</tabstop>
-  <tabstop>groupBox_2</tabstop>
+  <tabstop>m_secondaryGroupBox</tabstop>
   <tabstop>m_minSecondarySpinBox</tabstop>
   <tabstop>m_maxSecondarySpinBox</tabstop>
-  <tabstop>groupBox_3</tabstop>
+  <tabstop>m_tertiaryGroupBox</tabstop>
   <tabstop>m_minTertiarySpinBox</tabstop>
   <tabstop>m_maxTertiarySpinBox</tabstop>
   <tabstop>groupBox_4</tabstop>

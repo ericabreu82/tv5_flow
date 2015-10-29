@@ -30,6 +30,8 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/maptools/AbstractLayer.h>
 #include "../../Config.h"
 
+//#include "../../regionalization/Regionalization.h"
+
 // STL
 #include <memory>
 
@@ -50,6 +52,7 @@ namespace te
     {
       namespace fiocruz
       {
+        class DominanceParams;
 
         /*!
         \class MapWizardPage
@@ -71,6 +74,8 @@ namespace te
         public:
 
           void setList(std::list<te::map::AbstractLayerPtr>& layerList);
+
+          std::vector<DominanceParams> getDominances();
 
         private:
 

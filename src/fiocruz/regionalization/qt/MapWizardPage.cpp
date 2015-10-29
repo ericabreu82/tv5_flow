@@ -26,6 +26,8 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "MapWizardPage.h"
 #include "ui_MapWizardPageForm.h"
 
+#include "../../regionalization/Regionalization.h"
+
 // TerraLib
 #include <terralib/qt/widgets/colorbar/ColorBar.h>
 #include <terralib/qt/widgets/colorbar/ColorCatalogWidget.h>
@@ -65,7 +67,39 @@ bool te::qt::plugins::fiocruz::MapWizardPage::isComplete() const
   return true;
 }
 
-void te::qt::plugins::fiocruz::MapWizardPage::setList(std::list<te::map::AbstractLayerPtr>& layerList)
+std::vector<te::qt::plugins::fiocruz::DominanceParams> te::qt::plugins::fiocruz::MapWizardPage::getDominances()
 {
+  std::vector<DominanceParams> dominances;
 
+  if (m_ui->m_primaryGroupBox->isChecked())
+  {
+    DominanceParams dp;
+
+    dp.m_minLevel = m_ui->m_minPrimarySpinBox->value();
+    dp.m_maxLevel = m_ui->m_maxPrimarySpinBox->value();
+    dp.m_propertyName = "Primary";
+    dominances.push_back(dp);
+  }
+
+  if (m_ui->m_secondaryGroupBox->isChecked())
+  {
+    DominanceParams dp;
+
+    dp.m_minLevel = m_ui->m_minSecondarySpinBox->value();
+    dp.m_maxLevel = m_ui->m_maxSecondarySpinBox->value();
+    dp.m_propertyName = "Secondary";
+    dominances.push_back(dp);
+  }
+
+  if (m_ui->m_tertiaryGroupBox->isChecked())
+  {
+    DominanceParams dp;
+
+    dp.m_minLevel = m_ui->m_minTertiarySpinBox->value();
+    dp.m_maxLevel = m_ui->m_maxTertiarySpinBox->value();
+    dp.m_propertyName = "Tertiary";
+    dominances.push_back(dp);
+  }
+
+  return dominances;
 }

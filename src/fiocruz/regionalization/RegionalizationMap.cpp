@@ -48,6 +48,9 @@ bool te::qt::plugins::fiocruz::RegionalizationMap::init(te::da::DataSetPtr dataS
     std::string origin = dataSet->getString(columnOrigin);
     std::string destiny = dataSet->getString(columnDestiny);
 
+    if (origin.empty() || destiny.empty())
+      continue;
+
     //we fist check if there is already any occurrency from the current origin
     OriginMap::iterator itOrigin = m_originMap.find(origin);
     if (itOrigin == m_originMap.end())

@@ -25,6 +25,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 #include "../Config.h"
 #include "terralib/dataaccess/dataset/DataSet.h"
+#include "terralib/dataaccess/dataset/DataSetAdapter.h"
 #include "terralib/dataaccess/datasource/DataSource.h"
 #include "RegionalizationMap.h"
 
@@ -48,8 +49,6 @@ namespace te
         {
           public:
             te::da::DataSourcePtr   m_dataSource; //The dataSource
-            te::mem::DataSet*       m_dataSet; //!< The dataSet
-            te::da::DataSetType*    m_dataSetType; //!< The dataSet type of the dataSet
             std::string             m_dataSetName;
         };
 
@@ -110,6 +109,9 @@ namespace te
             //input dominance params
             std::vector<DominanceParams> m_vecDominance;
 
+            //objects
+            std::vector<std::string> m_objects;
+
         };
 
         class RegionalizationOutputParams
@@ -169,7 +171,7 @@ namespace te
 
             bool getAliasMap(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnId, const std::string& columnAlias, std::map<std::string, std::string>& mapAlias);
 
-            DataSetParams cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName);
+            DataSetParams cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName, te::da::DataSourcePtr outputDataSource);
 
             bool addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams);
 

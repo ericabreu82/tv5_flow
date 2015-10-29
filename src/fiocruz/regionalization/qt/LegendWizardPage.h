@@ -80,13 +80,13 @@ namespace te
 
           std::map<std::string, te::map::GroupingItem*> getLegendMap();
 
+          std::vector<std::string> getObjects();
+
         public slots:
 
           void onApplyPushButtonReleased();
 
         protected:
-
-          std::vector<std::string> getObjects();
 
           void buildLegend(std::vector<std::string>& objects);
 

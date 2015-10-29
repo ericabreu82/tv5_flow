@@ -32,6 +32,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "RegionalizationRasterWizardPage.h"
 #include "RegionalizationVectorWizardPage.h"
 
+// Qt Includes
+#include <QMessageBox>
+
 
 te::qt::plugins::fiocruz::RegionalizationWizard::RegionalizationWizard(QWidget* parent, const RegionalizationType& type) : 
   QWizard(parent),
@@ -119,8 +122,15 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
 {
   te::qt::plugins::fiocruz::Regionalization reg;
 
-  reg.setInputParameters(m_externalTablePage->getRegionalizationInputParameters());
-  reg.setOutputParameters(m_regionalizationVectorPage->getRegionalizationOutputParameters());
+  RegionalizationInputParams* inParams = m_externalTablePage->getRegionalizationInputParameters();
+
+  inParams->m_vecDominance = m_mapPage->getDominances();
+  inParams->m_objects = m_legendPage->getObjects();
+
+  RegionalizationOutputParams* outParams = m_regionalizationVectorPage->getRegionalizationOutputParameters();
+
+  reg.setInputParameters(inParams);
+  reg.setOutputParameters(outParams);
 
   bool res = false;
 
@@ -128,8 +138,19 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
   {
     res = reg.generate();
   }
+  catch (const te::common::Exception& e)
+  {
+    QMessageBox::warning(this, tr("Regionalization"), e.what());
+    return false;
+  }
+  catch (const std::exception& e)
+  {
+    QMessageBox::warning(this, tr("Regionalization"), e.what());
+    return false;
+  }
   catch (...)
   {
+    QMessageBox::warning(this, tr("Regionalization"), tr("Internal Error."));
     return false;
   }
 

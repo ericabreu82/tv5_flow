@@ -45,6 +45,8 @@ namespace te
     {
       namespace fiocruz
       {
+        class SimpleMemDataSet;
+
         class DataSetParams
         {
           public:
@@ -57,6 +59,7 @@ namespace te
           public:
 
             DataSetParams          m_dataSetParams; //!< The dataSet containing the vector information
+            SimpleMemDataSet*      m_simpleDataSet; //!< The simple memory dataSet
             std::string            m_originColumn; //!< The name of the origin column
             RegionalizationMap     m_regMap; //!< The regionalization map
         };
@@ -171,7 +174,7 @@ namespace te
 
             bool getAliasMap(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnId, const std::string& columnAlias, std::map<std::string, std::string>& mapAlias);
 
-            DataSetParams cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName, te::da::DataSourcePtr outputDataSource);
+            SimpleMemDataSet* cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName) const;
 
             bool addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams);
 

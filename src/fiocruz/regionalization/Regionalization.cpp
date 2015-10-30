@@ -24,6 +24,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 #include "Regionalization.h"
+#include "SimpleMemDataSet.h"
 
 #include "terralib/common/StringUtils.h"
 
@@ -97,11 +98,12 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
   regMap.init(iTabularDataSet, iTabularColumnOriginId, iTabularColumnDestinyId);
 
   //we create the output dataset by cloning the input dataset
-  DataSetParams oDataSetParams = cloneDataSet(iVectorDataSource, iVectorDataSetName, oDataSetName, oDataSource);
+  SimpleMemDataSet* simpleDataSet = cloneDataSet(iVectorDataSource, iVectorDataSetName);
   
   //then we add the dominance information
   RegionalizationMapParams regParams;
-  regParams.m_dataSetParams = oDataSetParams;
+  //regParams.m_dataSetParams = oDataSetParams;
+  regParams.m_simpleDataSet = simpleDataSet;
   regParams.m_originColumn = oVectorColumnOriginId;
   regParams.m_regMap = regMap;
 
@@ -122,7 +124,27 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
     addOcurrenciesProperty(regParams, destinyId, propertyName);
   }
 
-  m_outputParams->m_oDataSource->close();
+  ComplexDataSet complexDataSet = simpleDataSet->convertToDataSet();
+
+
+  //try to save
+  //exchange
+  te::da::DataSetTypeConverter* converter = new te::da::DataSetTypeConverter(complexDataSet.m_dataSetType, oDataSource->getCapabilities(), oDataSource->getEncoding());
+
+  te::da::DataSetType* dsTypeResult = converter->getResult();
+
+  std::map<std::string, std::string> nopt;
+
+  oDataSource->createDataSet(dsTypeResult, nopt);
+
+  std::auto_ptr<te::da::DataSetAdapter> dsAdapter(te::da::CreateAdapter(complexDataSet.m_dataSet, converter));
+
+  oDataSource->add(dsTypeResult->getName(), dsAdapter.get(), oDataSource->getConnectionInfo());
+  //std::map<std::string, std::string> mapOptions;
+  //m_outputParams->m_oDataSource->createDataSet(complexDataSet.m_dataSetType, mapOptions);
+  //m_outputParams->m_oDataSource->add(complexDataSet.m_dataSetType->getName(), complexDataSet.m_dataSet, mapOptions);
+
+  delete simpleDataSet;
 
   return true;
 }
@@ -292,12 +314,31 @@ bool te::qt::plugins::fiocruz::Regionalization::getAliasMap(te::da::DataSourcePt
   return true;
 }
 
-te::qt::plugins::fiocruz::DataSetParams te::qt::plugins::fiocruz::Regionalization::cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& outputDataSetName, te::da::DataSourcePtr outputDataSource)
+te::qt::plugins::fiocruz::SimpleMemDataSet* te::qt::plugins::fiocruz::Regionalization::cloneDataSet(te::da::DataSourcePtr dataSource, const std::string& dataSetName) const
 {
   // we first get the information about the input vector DataSet
   std::auto_ptr<te::da::DataSet> inputDataSet = dataSource->getDataSet(dataSetName);
   std::auto_ptr<te::da::DataSetType> inputDataSetType = dataSource->getDataSetType(dataSetName);
+  size_t numProperties = inputDataSetType->size();
 
+  //we create a simple memory dataSet
+  SimpleMemDataSet* simpleDataSet = new SimpleMemDataSet((te::da::DataSetType*)inputDataSetType->clone());
+
+  //then we copy all the data from the input dataSet into the simple memory dataSet
+  inputDataSet->moveBeforeFirst();
+  while (inputDataSet->moveNext())
+  {
+    SimpleMemDataSet::Row row;
+    for (size_t column = 0; column < numProperties; ++column)
+    {
+      std::auto_ptr<te::dt::AbstractData> data = inputDataSet->getValue(column);
+      row.push_back(data.release());
+    }
+    simpleDataSet->addRow(row);
+  }
+  return simpleDataSet;
+
+  /*
   //exchange
   te::da::DataSetTypeConverter* converter = new te::da::DataSetTypeConverter(inputDataSetType.get(), outputDataSource->getCapabilities(), outputDataSource->getEncoding());
 
@@ -317,6 +358,7 @@ te::qt::plugins::fiocruz::DataSetParams te::qt::plugins::fiocruz::Regionalizatio
   dataSetParams.m_dataSource = outputDataSource;
   
   return dataSetParams;
+  */
 }
 
 bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams)
@@ -375,6 +417,34 @@ bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const Regio
 
 bool te::qt::plugins::fiocruz::Regionalization::addOcurrenciesProperty(const RegionalizationMapParams& params, const std::string& destinyId, const std::string& newPropertyName)
 {
+  SimpleMemDataSet* simpleDataSet = params.m_simpleDataSet;
+  const std::string& originColumn = params.m_originColumn;
+  const RegionalizationMap& regMap = params.m_regMap;
+
+  te::dt::Property* propertyOccurrencies = new te::dt::SimpleProperty(newPropertyName, te::dt::INT32_TYPE);
+  simpleDataSet->addProperty(propertyOccurrencies);
+
+  size_t size = simpleDataSet->size();
+  size_t originColumnIndex = simpleDataSet->getDataSetType()->getPropertyPosition(originColumn);
+  size_t destinyColumnIndex = simpleDataSet->getDataSetType()->getPropertyPosition(newPropertyName);
+
+  for (size_t row = 0; row < size; ++row)
+  {
+    te::dt::AbstractData* absData = simpleDataSet->getData(row, originColumnIndex);
+    std::string originId = absData->toString();
+
+    size_t count = regMap.getOccurrenciesCount(originId, destinyId);
+
+    te::dt::AbstractData* newData = new te::dt::SimpleData<int>((int)count);
+    simpleDataSet->setData(row, destinyColumnIndex, newData);
+  }
+
+  return true;
+
+
+
+
+  /*
   std::string dsName = params.m_dataSetParams.m_dataSource->getDataSetNames()[0];
 
   //add new property
@@ -425,5 +495,6 @@ bool te::qt::plugins::fiocruz::Regionalization::addOcurrenciesProperty(const Reg
   params.m_dataSetParams.m_dataSource->update(dsName, newData, propsPos, ids);
 
   return true;
+  */
 }
 

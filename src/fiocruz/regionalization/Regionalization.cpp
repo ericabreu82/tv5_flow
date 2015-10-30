@@ -435,7 +435,7 @@ bool te::qt::plugins::fiocruz::Regionalization::addOcurrenciesProperty(const Reg
 
     size_t count = regMap.getOccurrenciesCount(originId, destinyId);
 
-    te::dt::AbstractData* newData = new te::dt::SimpleData<int>((int)count);
+    te::dt::AbstractData* newData = new te::dt::SimpleData<int, te::dt::INT32_TYPE>((int)count);
     simpleDataSet->setData(row, destinyColumnIndex, newData);
   }
 

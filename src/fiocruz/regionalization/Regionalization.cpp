@@ -102,16 +102,15 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
   
   //then we add the dominance information
   RegionalizationMapParams regParams;
-  //regParams.m_dataSetParams = oDataSetParams;
   regParams.m_simpleDataSet = simpleDataSet;
   regParams.m_originColumn = oVectorColumnOriginId;
   regParams.m_regMap = regMap;
 
-  //for (size_t i = 0; i < vecDominance.size(); ++i)
-  //{
-  //  const DominanceParams& dominanceParams = vecDominance[i];
-  //  addDominanceProperty(regParams, dominanceParams);
-  //}
+  for (size_t i = 0; i < vecDominance.size(); ++i)
+  {
+    const DominanceParams& dominanceParams = vecDominance[i];
+    addDominanceProperty(regParams, dominanceParams);
+  }
 
   //std::map<std::string, std::string> mapAlias;
   //getAliasMap(iTabularDataSource, iTabularDataSetName, iTabularColumnDestinyId, iTabularColumnDestinyAlias, mapAlias);
@@ -337,80 +336,38 @@ te::qt::plugins::fiocruz::SimpleMemDataSet* te::qt::plugins::fiocruz::Regionaliz
     simpleDataSet->addRow(row);
   }
   return simpleDataSet;
-
-  /*
-  //exchange
-  te::da::DataSetTypeConverter* converter = new te::da::DataSetTypeConverter(inputDataSetType.get(), outputDataSource->getCapabilities(), outputDataSource->getEncoding());
-
-  te::da::DataSetType* dsTypeResult = converter->getResult();
-
-  std::map<std::string, std::string> nopt;
-
-  outputDataSource->createDataSet(dsTypeResult, nopt);
-
-  std::auto_ptr<te::da::DataSetAdapter> dsAdapter(te::da::CreateAdapter(inputDataSet.get(), converter));
-
-  outputDataSource->add(dsTypeResult->getName(), dsAdapter.get(), outputDataSource->getConnectionInfo());
-
-  //set parameters
-  DataSetParams dataSetParams;
-  dataSetParams.m_dataSetName = outputDataSetName;
-  dataSetParams.m_dataSource = outputDataSource;
-  
-  return dataSetParams;
-  */
 }
 
 bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const RegionalizationMapParams& params, const DominanceParams& dominanceParams)
 {
-  te::da::DataSourcePtr dataSource = params.m_dataSetParams.m_dataSource;
-  std::string dataSetName = params.m_dataSetParams.m_dataSetName;
-
+  SimpleMemDataSet* simpleDataSet = params.m_simpleDataSet;
   const std::string& originColumn = params.m_originColumn;
   const RegionalizationMap& regMap = params.m_regMap;
   int minLevel = dominanceParams.m_minLevel;
   int maxLevel = dominanceParams.m_maxLevel;
   std::string newPropertyName = dominanceParams.m_propertyName;
 
-  //adds the column to the output dataSet
+  //adds the column to the output simple dataSet
   te::dt::Property* propertyDominance = new te::dt::StringProperty(newPropertyName, te::dt::STRING, 255, false);
-  dataSource->addProperty(dataSetName, propertyDominance);
+  simpleDataSet->addProperty(propertyDominance);
 
-  //now we must create a new memory dataSet to be used to update the dominance data into the output DataSet
-  te::da::DataSetType* dataSetType = new te::da::DataSetType(dataSetName);
-  dataSetType->add(propertyDominance);
+  size_t size = simpleDataSet->size();
+  size_t originColumnIndex = simpleDataSet->getDataSetType()->getPropertyPosition(originColumn);
+  size_t destinyColumnIndex = simpleDataSet->getDataSetType()->getPropertyPosition(newPropertyName);
 
-  te::da::ObjectIdSet setOids;
-  te::mem::DataSet* dataSet = new te::mem::DataSet(dataSetType);
-  std::vector<size_t> vecProperties;
-  vecProperties.push_back(0);
-
-  //for each origin, we calculate the dominance and add the information into the dataSet
-  std::vector<std::string> vecOrigins = regMap.getOriginIds();
-
-  for (size_t i = 0; i < vecOrigins.size(); ++i)
+  for (size_t row = 0; row < size; ++row)
   {
-    std::string originId = vecOrigins[i];
+    te::dt::AbstractData* absData = simpleDataSet->getData(row, originColumnIndex);
+    std::string originId = absData->toString();
+
     std::string destinyId = regMap.getDominanceId(originId, minLevel, maxLevel);
 
-    te::mem::DataSetItem* item = new te::mem::DataSetItem(dataSet);
-    item->setString(0, destinyId);
-
-    te::dt::String* data = new te::dt::String(originId);
-
-    te::da::ObjectId* oid = new te::da::ObjectId();
-
-    oid->addValue(data);
-    setOids.add(oid);
-
-    dataSet->add(item);
+    if (destinyId.empty() == false)
+    {
+      te::dt::AbstractData* newData = new te::dt::String(destinyId);
+      simpleDataSet->setData(row, destinyColumnIndex, newData);
+    }
   }
-
-  //we finally persist the data by updating it into the dataSource
-  std::map<std::string, std::string> mapOptions;
-  dataSource->update(dataSetName, dataSet, vecProperties, &setOids, mapOptions);
-
-  delete dataSet;
  
   return true;
 }
@@ -440,61 +397,5 @@ bool te::qt::plugins::fiocruz::Regionalization::addOcurrenciesProperty(const Reg
   }
 
   return true;
-
-
-
-
-  /*
-  std::string dsName = params.m_dataSetParams.m_dataSource->getDataSetNames()[0];
-
-  //add new property
-  te::dt::Property* propertyOccurrencies = new te::dt::SimpleProperty(newPropertyName, te::dt::INT32_TYPE);
-  params.m_dataSetParams.m_dataSource->addProperty(dsName, propertyOccurrencies);
-
-  //get map information
-  const std::string& originColumn = params.m_originColumn;
-  const RegionalizationMap& regMap = params.m_regMap;
-
-  //get data
-  std::auto_ptr<te::da::DataSet> dataSet = params.m_dataSetParams.m_dataSource->getDataSet(dsName);
-  std::auto_ptr<te::da::DataSetType> dataSetType = params.m_dataSetParams.m_dataSource->getDataSetType(dsName);
-
-  //get pos of attr used as pk (ONLY ONE ATTR USED AS PK)
-  std::vector<std::size_t> ids;
-  ids.push_back(dataSetType->getPropertyPosition(originColumn));
-
-  //create new datasettype
-  te::mem::DataSet* newData = new te::mem::DataSet(dataSetType.get());
-  std::vector< std::set<int> > propsPos;
-
-  //fill new property
-  dataSet->moveBeforeFirst();
-
-  while (dataSet->moveNext() == true)
-  {
-    //get data
-    std::set<int> attrPos;
-    std::string originId = dataSet->getAsString(originColumn);
-    size_t count = regMap.getOccurrenciesCount(originId, destinyId);
-
-    //create datasetitem
-    te::mem::DataSetItem* dsItem = new te::mem::DataSetItem(newData);
-
-    dsItem->setValue(originColumn, dataSet->getValue(originColumn).release());
-    dsItem->setValue(newPropertyName, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(count));
-
-    attrPos.insert(dataSetType->getPropertyPosition(newPropertyName));
-
-    propsPos.push_back(attrPos);
-
-    newData->add(dsItem);
-  }
-
-  dataSet->moveBeforeFirst();
-
-  params.m_dataSetParams.m_dataSource->update(dsName, newData, propsPos, ids);
-
-  return true;
-  */
 }
 

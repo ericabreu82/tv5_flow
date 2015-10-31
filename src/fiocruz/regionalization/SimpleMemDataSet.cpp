@@ -43,6 +43,7 @@ te::qt::plugins::fiocruz::SimpleMemDataSet::SimpleMemDataSet(const std::string& 
 
 te::qt::plugins::fiocruz::SimpleMemDataSet::~SimpleMemDataSet()
 {
+  clear();
 }
 
 bool te::qt::plugins::fiocruz::SimpleMemDataSet::addProperty(te::dt::Property* property)
@@ -108,7 +109,7 @@ void te::qt::plugins::fiocruz::SimpleMemDataSet::clear()
 {
   for (size_t i = 0; i < m_vecData.size(); ++i)
   {
-    for (size_t j = 0; i < m_vecData[i].size(); ++j)
+    for (size_t j = 0; j < m_vecData[i].size(); ++j)
     {
       delete m_vecData[i][j];
     }
@@ -129,8 +130,10 @@ te::qt::plugins::fiocruz::ComplexDataSet te::qt::plugins::fiocruz::SimpleMemData
     for (size_t column = 0; column < numColumns; ++column)
     {
       te::dt::AbstractData* data = this->getData(row, column);
-
-      item->setValue(column, data->clone());
+      if (data != 0)
+      {
+        item->setValue(column, data->clone());
+      }
     }
     memDataSet->add(item);
   }

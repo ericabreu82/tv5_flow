@@ -58,7 +58,6 @@ namespace te
         {
           public:
 
-            DataSetParams          m_dataSetParams; //!< The dataSet containing the vector information
             SimpleMemDataSet*      m_simpleDataSet; //!< The simple memory dataSet
             std::string            m_originColumn; //!< The name of the origin column
             RegionalizationMap     m_regMap; //!< The regionalization map

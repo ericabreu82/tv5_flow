@@ -109,7 +109,8 @@ std::string te::qt::plugins::fiocruz::RegionalizationMap::getDominanceId(const s
   double highestPercentage = 0.;
   while (itDestiny != destinyMap.end())
   {
-    double percentage = (double)totalOcurrencies / (double)itDestiny->second;
+    double factor = (double)totalOcurrencies / (double)itDestiny->second;
+    double percentage = factor * 100.;
     if (percentage >= minLevel && percentage <= maxLevel)
     {
       if (percentage > highestPercentage)

@@ -320,8 +320,30 @@ te::qt::plugins::fiocruz::SimpleMemDataSet* te::qt::plugins::fiocruz::Regionaliz
   std::auto_ptr<te::da::DataSetType> inputDataSetType = dataSource->getDataSetType(dataSetName);
   size_t numProperties = inputDataSetType->size();
 
+  //remove  FID column
+  for (std::size_t t = 0; t < numProperties; ++t)
+  {
+    te::dt::Property* p = inputDataSetType->getProperty(t);
+
+    if (p->getName() == "FID")
+    {
+      inputDataSetType->remove(p);
+
+      numProperties = inputDataSetType->size();
+      break;
+    }
+  }
+
   //we create a simple memory dataSet
   SimpleMemDataSet* simpleDataSet = new SimpleMemDataSet((te::da::DataSetType*)inputDataSetType->clone());
+
+  std::vector<std::string> propNames;
+  for (std::size_t t = 0; t < numProperties; ++t)
+  {
+    te::dt::Property* p = inputDataSetType->getProperty(t);
+
+    propNames.push_back(p->getName());
+  }
 
   //then we copy all the data from the input dataSet into the simple memory dataSet
   inputDataSet->moveBeforeFirst();
@@ -330,11 +352,13 @@ te::qt::plugins::fiocruz::SimpleMemDataSet* te::qt::plugins::fiocruz::Regionaliz
     SimpleMemDataSet::Row row;
     for (size_t column = 0; column < numProperties; ++column)
     {
-      std::auto_ptr<te::dt::AbstractData> data = inputDataSet->getValue(column);
+      std::auto_ptr<te::dt::AbstractData> data = inputDataSet->getValue(propNames[column]);
       row.push_back(data.release());
     }
+
     simpleDataSet->addRow(row);
   }
+
   return simpleDataSet;
 }
 

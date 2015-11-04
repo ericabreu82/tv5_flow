@@ -23,6 +23,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 \brief This file defines the Regionalization Wizard class
 */
 
+// TerraLib
+#include <terralib/dataaccess/utils/Utils.h>
+#include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
+
+// Plugin
 #include "../Regionalization.h"
 #include "RegionalizationWizard.h"
 
@@ -96,6 +101,11 @@ void te::qt::plugins::fiocruz::RegionalizationWizard::setList(std::list<te::map:
   m_externalTablePage->setList(layerList);
 }
 
+te::map::AbstractLayerPtr te::qt::plugins::fiocruz::RegionalizationWizard::getOutputLayer()
+{
+  return m_outputLayer;
+}
+
 void te::qt::plugins::fiocruz::RegionalizationWizard::addPages()
 {
   m_externalTablePage.reset(new te::qt::plugins::fiocruz::ExternalTableWizardPage(this));
@@ -152,6 +162,18 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
   {
     QMessageBox::warning(this, tr("Regionalization"), tr("Internal Error."));
     return false;
+  }
+
+  //create layer
+  if (res)
+  {
+    te::da::DataSourcePtr ds = te::da::GetDataSource(outParams->m_oDataSource->getId());
+
+    te::qt::widgets::DataSet2Layer converter(ds->getId());
+
+    te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
+
+    m_outputLayer = converter(dt);
   }
 
   return res;

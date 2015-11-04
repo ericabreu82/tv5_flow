@@ -77,6 +77,8 @@ namespace te
 
           void setList(std::list<te::map::AbstractLayerPtr>& layerList);
 
+          te::map::AbstractLayerPtr getOutputLayer();
+
         protected:
 
           void addPages();
@@ -92,6 +94,8 @@ namespace te
           std::auto_ptr<te::qt::plugins::fiocruz::ExternalTableWizardPage> m_externalTablePage;
 
           RegionalizationType m_regionalizationType;
+
+          te::map::AbstractLayerPtr m_outputLayer;                                          //!< Generated Layer.
         };
       }   // end namespace fiocruz
     }     // end namespace plugins

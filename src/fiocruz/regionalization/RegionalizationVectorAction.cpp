@@ -62,6 +62,6 @@ void te::qt::plugins::fiocruz::RegionalizationVectorAction::onActionActivated(bo
   if(dlg.exec() == QDialog::Accepted)
   {
     //add new layer
-    //addNewLayer(dlg.getOutputLayer());
+    addNewLayer(dlg.getOutputLayer());
   }
 }

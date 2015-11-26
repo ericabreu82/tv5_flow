@@ -25,6 +25,8 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 #include "RegionalizationMap.h"
 
+#include <set>
+
 te::qt::plugins::fiocruz::RegionalizationMap::RegionalizationMap()
 {
 }
@@ -33,12 +35,15 @@ te::qt::plugins::fiocruz::RegionalizationMap::~RegionalizationMap()
 {
 }
 
-bool te::qt::plugins::fiocruz::RegionalizationMap::init(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny)
+bool te::qt::plugins::fiocruz::RegionalizationMap::init(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny, const std::vector<std::string>& vecFilterDestinyIds)
 {
   if (dataSet->moveBeforeFirst() == false)
   {
     return false;
   }
+
+  std::set<std::string> setFilterDestinyIds;
+  setFilterDestinyIds.insert(vecFilterDestinyIds.begin(), vecFilterDestinyIds.end());
 
   m_originMap.clear();
 
@@ -50,6 +55,11 @@ bool te::qt::plugins::fiocruz::RegionalizationMap::init(te::da::DataSetPtr dataS
 
     if (origin.empty() || destiny.empty())
       continue;
+
+    if (setFilterDestinyIds.find(destiny) == setFilterDestinyIds.end())
+    {
+      continue;
+    }
 
     //we fist check if there is already any occurrency from the current origin
     OriginMap::iterator itOrigin = m_originMap.find(origin);

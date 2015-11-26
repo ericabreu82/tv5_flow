@@ -77,7 +77,7 @@ namespace te
 
           void setList(std::list<te::map::AbstractLayerPtr>& layerList);
 
-          te::map::AbstractLayerPtr getOutputLayer();
+          std::vector<te::map::AbstractLayerPtr>& getOutputLayers();
 
         protected:
 
@@ -95,7 +95,7 @@ namespace te
 
           RegionalizationType m_regionalizationType;
 
-          te::map::AbstractLayerPtr m_outputLayer;                                          //!< Generated Layer.
+          std::vector<te::map::AbstractLayerPtr> m_outputLayers;                                          //!< Generated Layer.
         };
       }   // end namespace fiocruz
     }     // end namespace plugins

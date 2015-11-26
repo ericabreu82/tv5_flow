@@ -94,7 +94,7 @@ qt5_use_modules(fiocruz Widgets)
 add_custom_command(
       TARGET fiocruz
       POST_BUILD
-	  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/bin/Debug/fiocruz.dll" "${terralib_DIR}/debug"
+	  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/bin/Debug/fiocruzd.dll" "${terralib_DIR}/debug"
       
       COMMENT "Copying plugin files..."
       VERBATIM

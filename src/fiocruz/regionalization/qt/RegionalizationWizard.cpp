@@ -24,7 +24,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 // TerraLib
+#include <terralib/common/STLUtils.h>
 #include <terralib/dataaccess/utils/Utils.h>
+#include <terralib/maptools/Grouping.h>
+#include <terralib/maptools/GroupingItem.h>
+#include <terralib/maptools/Utils.h>
 #include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
 
 // Plugin
@@ -101,9 +105,9 @@ void te::qt::plugins::fiocruz::RegionalizationWizard::setList(std::list<te::map:
   m_externalTablePage->setList(layerList);
 }
 
-te::map::AbstractLayerPtr te::qt::plugins::fiocruz::RegionalizationWizard::getOutputLayer()
+std::vector<te::map::AbstractLayerPtr>& te::qt::plugins::fiocruz::RegionalizationWizard::getOutputLayers()
 {
-  return m_outputLayer;
+  return m_outputLayers;
 }
 
 void te::qt::plugins::fiocruz::RegionalizationWizard::addPages()
@@ -167,13 +171,55 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
   //create layer
   if (res)
   {
-    te::da::DataSourcePtr ds = te::da::GetDataSource(outParams->m_oDataSource->getId());
+    //create layer for each dominance and create legend for dominance
+    std::vector<te::qt::plugins::fiocruz::DominanceParams> dpVec = m_mapPage->getDominances();
 
-    te::qt::widgets::DataSet2Layer converter(ds->getId());
+    std::map<std::string, te::map::GroupingItem*> legMap = m_legendPage->getLegendMap();
 
-    te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
+    for (std::size_t t = 0; t < dpVec.size(); ++t)
+    {
+      //create layer
+      te::da::DataSourcePtr ds = te::da::GetDataSource(outParams->m_oDataSource->getId());
 
-    m_outputLayer = converter(dt);
+      te::qt::widgets::DataSet2Layer converter(ds->getId());
+
+      te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
+
+      te::map::AbstractLayerPtr layer = converter(dt);
+
+      //create legend
+      std::vector<te::map::GroupingItem*> legend;
+
+      std::map<std::string, te::map::GroupingItem*>::iterator it;
+
+      for (it = legMap.begin(); it != legMap.end(); ++it)
+      {
+        te::map::GroupingItem* gi = new te::map::GroupingItem(*it->second);
+
+        legend.push_back(gi);
+      }
+
+      std::string groupingName = dpVec[t].m_propertyName;
+      int attrType = te::dt::STRING_TYPE;
+      int prec = 0;
+      int geomType = te::map::GetGeomType(layer);
+
+      //create grouping
+      te::map::Grouping* group = new te::map::Grouping(groupingName, te::map::UNIQUE_VALUE);
+      group->setPropertyType(attrType);
+      group->setPrecision(prec);
+      group->setStdDeviation(0.);
+      group->setGroupingItems(legend);
+
+      layer->setGrouping(group);
+
+      layer->setTitle(layer->getTitle() + "_" + groupingName);
+
+      //add layer to output layers
+      m_outputLayers.push_back(layer);
+    }
+
+    te::common::FreeContents(legMap);
   }
 
   return res;

@@ -53,7 +53,7 @@ namespace te
 
           virtual ~RegionalizationMap();
 
-          bool init(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny);
+          bool init(te::da::DataSetPtr dataSet, const std::string& columnOrigin, const std::string& columnDestiny, const std::vector<std::string>& vecFilterDestinyIds);
 
           std::string getDominanceId(const std::string& originId, int minLevel, int maxLevel) const;
 

@@ -95,7 +95,7 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
 
   //we first calculate the regionalization
   RegionalizationMap regMap;
-  regMap.init(iTabularDataSet, iTabularColumnOriginId, iTabularColumnDestinyId);
+  regMap.init(iTabularDataSet, iTabularColumnOriginId, iTabularColumnDestinyId, vecIds);
 
   //we create the output dataset by cloning the input dataset
   SimpleMemDataSet* simpleDataSet = cloneDataSet(iVectorDataSource, iVectorDataSetName);

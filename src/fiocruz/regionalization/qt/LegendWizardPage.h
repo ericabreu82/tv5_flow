@@ -92,6 +92,8 @@ namespace te
 
           void buildSymbolizer();
 
+          void createNullLegend();
+
           void updateLegend();
 
         private:

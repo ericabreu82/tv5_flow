@@ -95,6 +95,8 @@ void te::qt::plugins::fiocruz::LegendWizardPage::setList(std::vector<std::string
 
 std::map<std::string, te::map::GroupingItem*> te::qt::plugins::fiocruz::LegendWizardPage::getLegendMap()
 {
+  createNullLegend();
+
   std::map<std::string, te::map::GroupingItem*> map;
 
   for (std::size_t t = 0; t < m_legend.size(); ++t)
@@ -140,7 +142,7 @@ void te::qt::plugins::fiocruz::LegendWizardPage::buildLegend(std::vector<std::st
   for (std::size_t t = 0; t < objects.size(); ++t)
   {
     te::map::GroupingItem* legendItem = new te::map::GroupingItem;
-    legendItem->setValue(te::common::Globals::sm_nanStr);
+    legendItem->setValue(objects[t]);
     legendItem->setTitle(objects[t]);
     legendItem->setCount(0);
 
@@ -179,6 +181,22 @@ void te::qt::plugins::fiocruz::LegendWizardPage::buildSymbolizer()
 
     m_legend[t]->setSymbolizers(symbVec);
   }
+}
+
+void te::qt::plugins::fiocruz::LegendWizardPage::createNullLegend()
+{
+  //create null group item
+  te::map::GroupingItem* legendItem = new te::map::GroupingItem;
+  legendItem->setValue(te::common::Globals::sm_nanStr);
+  legendItem->setTitle("No Dominance");
+  legendItem->setCount(0);
+
+  std::vector<te::se::Symbolizer*> symbVec;
+  te::se::Symbolizer* s = te::se::CreateSymbolizer(te::gm::PolygonType, "#dddddd");
+  symbVec.push_back(s);
+  legendItem->setSymbolizers(symbVec);
+
+  m_legend.push_back(legendItem);
 }
 
 void te::qt::plugins::fiocruz::LegendWizardPage::updateLegend()

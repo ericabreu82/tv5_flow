@@ -26,6 +26,9 @@
 #ifndef __FIOCRUZ_INTERNAL_REGIONALIZATION_EXTERNALTABLEWIZARDPAGE_H
 #define __FIOCRUZ_INTERNAL_REGIONALIZATION_EXTERNALTABLEWIZARDPAGE_H
 
+//Regionalization
+#include "../Regionalization.h"
+
 // TerraLib
 #include <terralib/maptools/AbstractLayer.h>
 #include "../../Config.h"
@@ -71,7 +74,7 @@ namespace te
 
           void setList(std::list<te::map::AbstractLayerPtr>& layerList);
 
-          std::vector<std::string> getUniqueObjects();
+          te::qt::plugins::fiocruz::VecStringPair getUniqueObjects();
 
           te::qt::plugins::fiocruz::RegionalizationInputParams* getRegionalizationInputParameters();
 

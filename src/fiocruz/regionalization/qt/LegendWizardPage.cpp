@@ -83,13 +83,13 @@ bool te::qt::plugins::fiocruz::LegendWizardPage::isComplete() const
   return true;
 }
 
-void te::qt::plugins::fiocruz::LegendWizardPage::setList(std::vector<std::string> objects)
+void te::qt::plugins::fiocruz::LegendWizardPage::setList(te::qt::plugins::fiocruz::VecStringPair objects)
 {
   m_ui->m_listWidget->clear();
 
   for (std::size_t t = 0; t < objects.size(); ++t)
   {
-    m_ui->m_listWidget->addItem(objects[t].c_str());
+    m_ui->m_listWidget->addItem(objects[t].first.c_str());
   }
 }
 

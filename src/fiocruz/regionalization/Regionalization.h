@@ -23,6 +23,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 \brief This file defines the abstract class AbstractAction
 */
 
+#ifndef __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATION_H
+#define __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATION_H
+
 #include "../Config.h"
 #include "terralib/dataaccess/dataset/DataSet.h"
 #include "terralib/dataaccess/dataset/DataSetAdapter.h"
@@ -45,6 +48,9 @@ namespace te
     {
       namespace fiocruz
       {
+        typedef std::pair<std::string, std::string> StringPair;
+        typedef std::vector<StringPair> VecStringPair;
+
         class SimpleMemDataSet;
 
         class DataSetParams
@@ -150,8 +156,7 @@ namespace te
             typedef std::map<std::string, std::size_t> OriginMap;
             typedef std::map<std::string, OriginMap> MercadoMap;
 
-
-          public:
+        public:
 
             Regionalization();
 
@@ -163,7 +168,7 @@ namespace te
 
             void setOutputParameters(RegionalizationOutputParams* outParams);
 
-            bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds);
+            bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& idColumnName, const std::string& aliasColumnName, VecStringPair& vecIds);
 
           protected:
 
@@ -189,3 +194,5 @@ namespace te
     }
   }
 }
+
+#endif //__FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATION_H

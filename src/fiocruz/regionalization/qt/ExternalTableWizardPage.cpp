@@ -93,9 +93,9 @@ void te::qt::plugins::fiocruz::ExternalTableWizardPage::setList(std::list<te::ma
     onTabularLayerComboBoxActivated(0);
 }
 
-std::vector<std::string> te::qt::plugins::fiocruz::ExternalTableWizardPage::getUniqueObjects()
+te::qt::plugins::fiocruz::VecStringPair te::qt::plugins::fiocruz::ExternalTableWizardPage::getUniqueObjects()
 {
-  std::vector<std::string> values;
+  te::qt::plugins::fiocruz::VecStringPair values;
 
   QVariant varLayer = m_ui->m_tabularLayerComboBox->currentData(Qt::UserRole);
 
@@ -111,12 +111,13 @@ std::vector<std::string> te::qt::plugins::fiocruz::ExternalTableWizardPage::getU
 
       std::string dataSetName = dsType->getName();
       std::string columnName = m_ui->m_tabularObjIdComboBox->currentText().toStdString();
+      std::string aliasColumnName = m_ui->m_tabularObjNameComboBox->currentText().toStdString();
 
       te::da::DataSourcePtr ds = te::da::GetDataSource(dsLayer->getDataSourceId());
 
       te::qt::plugins::fiocruz::Regionalization reg;
 
-      reg.getDistinctObjects(ds, dataSetName, columnName, values);
+      reg.getDistinctObjects(ds, dataSetName, columnName, aliasColumnName, values);
     }
   }
 

@@ -158,21 +158,25 @@ void te::qt::plugins::fiocruz::Regionalization::setOutputParameters(Regionalizat
   m_outputParams.reset(outParams);
 }
 
-bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& columnName, std::vector<std::string>& vecIds)
+bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& idColumnName, const std::string& aliasColumnName, VecStringPair& vecIds)
 {
   vecIds.clear();
+   
+  te::da::Expression* expression = new te::da::PropertyName(idColumnName);
 
-  te::da::Expression* expression = new te::da::PropertyName(columnName);
+  //te::da::Distinct* distinct = new te::da::Distinct;
+  //distinct->push_back(expression);
 
-  te::da::Distinct* distinct = new te::da::Distinct;
-  distinct->push_back(expression);
+  te::da::Fields* fields = new te::da::Fields;
+  fields->push_back(new te::da::Field(idColumnName));
+  fields->push_back(new te::da::Field(aliasColumnName));
 
   te::da::FromItem* fromItem = new te::da::DataSetName(dataSetName);
   te::da::From* from = new te::da::From;
   from->push_back(fromItem);
 
-  te::da::Select select;
-  select.setDistinct(distinct);
+  te::da::Select select(fields);
+  //select.setDistinct(distinct);
   select.setFrom(from);
 
   std::auto_ptr<te::da::DataSet> dataSet = dataSource->query(select);
@@ -181,9 +185,18 @@ bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataS
     return false;
   }
 
+  std::set<std::string> setIds;
   while (dataSet->moveNext())
   {
-    vecIds.push_back(dataSet->getString(0));
+    std::string id = dataSet->getString(0);
+    std::string alias = dataSet->getString(1);
+    
+    if (setIds.find(id) != setIds.end())
+    {
+      continue;
+    }
+
+    vecIds.push_back(std::make_pair(id, alias));
   }
 
   return true;

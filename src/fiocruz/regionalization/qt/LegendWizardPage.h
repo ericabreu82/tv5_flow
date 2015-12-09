@@ -26,6 +26,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 #ifndef __FIOCRUZ_INTERNAL_REGIONALIZATION_LEGENDWIZARDPAGE_H
 #define __FIOCRUZ_INTERNAL_REGIONALIZATION_LEGENDWIZARDPAGE_H
 
+//Regionalization
+#include "../Regionalization.h"
+
 // TerraLib
 #include <terralib/maptools/AbstractLayer.h>
 #include "../../Config.h"
@@ -76,7 +79,7 @@ namespace te
 
         public:
 
-          void setList(std::vector<std::string> objects);
+          void setList(VecStringPair objects);
 
           std::map<std::string, te::map::GroupingItem*> getLegendMap();
 

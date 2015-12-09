@@ -23,6 +23,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 \brief This file defines the representation of a Regionalization Map
 */
 
+#ifndef __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONMAP_H
+#define __FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONMAP_H
+
 #include "terralib/dataaccess/dataset/DataSet.h"
 
 #include <map>
@@ -70,3 +73,5 @@ namespace te
     }
   }
 }
+
+#endif //__FIOCRUZ_INTERNAL_REGIONALIZATION_REGIONALIZATIONMAP_H

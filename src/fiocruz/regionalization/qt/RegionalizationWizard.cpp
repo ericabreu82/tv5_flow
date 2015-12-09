@@ -68,7 +68,7 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::validateCurrentPage()
   {
     bool res = m_externalTablePage->isComplete();
 
-    std::vector<std::string> objects = m_externalTablePage->getUniqueObjects();
+    te::qt::plugins::fiocruz::VecStringPair objects = m_externalTablePage->getUniqueObjects();
 
     if (res && !objects.empty())
     {

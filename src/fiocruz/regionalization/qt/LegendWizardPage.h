@@ -85,13 +85,15 @@ namespace te
 
           std::vector<std::string> getObjects();
 
+          std::vector<std::string> getObjectsAlias();
+
         public slots:
 
           void onApplyPushButtonReleased();
 
         protected:
 
-          void buildLegend(std::vector<std::string>& objects);
+          void buildLegend(std::vector<std::string>& objects, std::vector<std::string>& alias);
 
           void buildSymbolizer();
 

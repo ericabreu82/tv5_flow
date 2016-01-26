@@ -103,22 +103,17 @@ te::qt::plugins::fiocruz::VecStringPair te::qt::plugins::fiocruz::ExternalTableW
   {
     te::map::AbstractLayerPtr l = varLayer.value<te::map::AbstractLayerPtr>();
 
-    te::map::DataSetLayer* dsLayer = dynamic_cast<te::map::DataSetLayer*>(l.get());
+    std::auto_ptr<te::da::DataSetType> dsType = l->getSchema();
 
-    if (dsLayer)
-    {
-      std::auto_ptr<te::da::DataSetType> dsType = dsLayer->getSchema();
+    std::string dataSetName = dsType->getName();
+    std::string columnName = m_ui->m_tabularObjIdComboBox->currentText().toStdString();
+    std::string aliasColumnName = m_ui->m_tabularObjNameComboBox->currentText().toStdString();
 
-      std::string dataSetName = dsType->getName();
-      std::string columnName = m_ui->m_tabularObjIdComboBox->currentText().toStdString();
-      std::string aliasColumnName = m_ui->m_tabularObjNameComboBox->currentText().toStdString();
+    te::da::DataSourcePtr ds = te::da::GetDataSource(l->getDataSourceId());
 
-      te::da::DataSourcePtr ds = te::da::GetDataSource(dsLayer->getDataSourceId());
+    te::qt::plugins::fiocruz::Regionalization reg;
 
-      te::qt::plugins::fiocruz::Regionalization reg;
-
-      reg.getDistinctObjects(ds, dataSetName, columnName, aliasColumnName, values);
-    }
+    reg.getDistinctObjects(ds, dataSetName, columnName, aliasColumnName, values);
   }
 
   return values;
@@ -127,16 +122,9 @@ te::qt::plugins::fiocruz::VecStringPair te::qt::plugins::fiocruz::ExternalTableW
 te::qt::plugins::fiocruz::RegionalizationInputParams* te::qt::plugins::fiocruz::ExternalTableWizardPage::getRegionalizationInputParameters()
 {
   //get vectorial layer
-  te::map::DataSetLayer* dsVecLayer = 0;
-
   QVariant varVecLayer = m_ui->m_spatialLayerComboBox->currentData(Qt::UserRole);
 
-  if (varVecLayer.isValid())
-  {
-    te::map::AbstractLayerPtr l = varVecLayer.value<te::map::AbstractLayerPtr>();
-
-    dsVecLayer = dynamic_cast<te::map::DataSetLayer*>(l.get());
-  }
+  te::map::AbstractLayerPtr dsVecLayer = varVecLayer.value<te::map::AbstractLayerPtr>();
 
   if (!dsVecLayer)
     throw;
@@ -144,16 +132,9 @@ te::qt::plugins::fiocruz::RegionalizationInputParams* te::qt::plugins::fiocruz::
   std::auto_ptr<te::da::DataSetType> dsVecType = dsVecLayer->getSchema();
 
   //get tabular layer
-  te::map::DataSetLayer* dsTabLayer = 0;
-
   QVariant varTabLayer = m_ui->m_tabularLayerComboBox->currentData(Qt::UserRole);
 
-  if (varTabLayer.isValid())
-  {
-    te::map::AbstractLayerPtr l = varTabLayer.value<te::map::AbstractLayerPtr>();
-
-    dsTabLayer = dynamic_cast<te::map::DataSetLayer*>(l.get());
-  }
+  te::map::AbstractLayerPtr dsTabLayer = varTabLayer.value<te::map::AbstractLayerPtr>();
 
   if (!dsTabLayer)
     throw;

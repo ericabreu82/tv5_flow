@@ -188,13 +188,15 @@ bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataS
   std::set<std::string> setIds;
   while (dataSet->moveNext())
   {
-    std::string id = dataSet->getString(0);
-    std::string alias = dataSet->getString(1);
+    std::string id = dataSet->getString(idColumnName);
+    std::string alias = dataSet->getString(aliasColumnName);
     
     if (setIds.find(id) != setIds.end())
     {
       continue;
     }
+
+    setIds.insert(id);
 
     vecIds.push_back(std::make_pair(id, alias));
   }
@@ -385,7 +387,7 @@ bool te::qt::plugins::fiocruz::Regionalization::addDominanceProperty(const Regio
   std::string newPropertyName = dominanceParams.m_propertyName;
 
   //adds the column to the output simple dataSet
-  te::dt::Property* propertyDominance = new te::dt::StringProperty(newPropertyName, te::dt::STRING, 255, false);
+  te::dt::Property* propertyDominance = new te::dt::StringProperty(newPropertyName, te::dt::STRING, 254, false);
   simpleDataSet->addProperty(propertyDominance);
 
   size_t size = simpleDataSet->size();

@@ -89,7 +89,10 @@ void te::qt::plugins::fiocruz::LegendWizardPage::setList(te::qt::plugins::fiocru
 
   for (std::size_t t = 0; t < objects.size(); ++t)
   {
-    m_ui->m_listWidget->addItem(objects[t].first.c_str());
+    QListWidgetItem* item = new QListWidgetItem(m_ui->m_listWidget);
+    item->setText(objects[t].second.c_str());
+    item->setData(Qt::UserRole, objects[t].first.c_str());
+    m_ui->m_listWidget->addItem(item);
   }
 }
 
@@ -113,7 +116,9 @@ void te::qt::plugins::fiocruz::LegendWizardPage::onApplyPushButtonReleased()
 {
   std::vector<std::string> objects = getObjects();
 
-  buildLegend(objects);
+  std::vector<std::string> alias = getObjectsAlias();
+
+  buildLegend(objects, alias);
 
   buildSymbolizer();
 
@@ -129,12 +134,24 @@ std::vector<std::string> te::qt::plugins::fiocruz::LegendWizardPage::getObjects(
   QList<QListWidgetItem*> list = m_ui->m_listWidget->selectedItems();
 
   for (int i = 0; i < list.size(); ++i)
+    values.push_back(list[i]->data(Qt::UserRole).toString().toStdString());
+
+  return values;
+}
+
+std::vector<std::string> te::qt::plugins::fiocruz::LegendWizardPage::getObjectsAlias()
+{
+  std::vector<std::string> values;
+
+  QList<QListWidgetItem*> list = m_ui->m_listWidget->selectedItems();
+
+  for (int i = 0; i < list.size(); ++i)
     values.push_back(list[i]->text().toStdString());
 
   return values;
 }
 
-void te::qt::plugins::fiocruz::LegendWizardPage::buildLegend(std::vector<std::string>& objects)
+void te::qt::plugins::fiocruz::LegendWizardPage::buildLegend(std::vector<std::string>& objects, std::vector<std::string>& alias)
 {
   te::common::FreeContents(m_legend);
   m_legend.clear();
@@ -143,7 +160,7 @@ void te::qt::plugins::fiocruz::LegendWizardPage::buildLegend(std::vector<std::st
   {
     te::map::GroupingItem* legendItem = new te::map::GroupingItem;
     legendItem->setValue(objects[t]);
-    legendItem->setTitle(objects[t]);
+    legendItem->setTitle(alias[t]);
     legendItem->setCount(0);
 
     std::vector<te::se::Symbolizer*> symbVec;

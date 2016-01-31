@@ -142,6 +142,7 @@ namespace te
             te::da::DataSourcePtr     m_oDataSource;
             std::string               m_oDataSetName;
             std::string               m_oVectorColumnOriginId;
+            std::vector<std::string>  m_propNames;
         };
 
 

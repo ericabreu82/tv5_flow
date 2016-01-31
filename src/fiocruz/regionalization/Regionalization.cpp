@@ -121,6 +121,8 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
     //std::string propertyName = destinyId;
     std::string propertyName = "obj_" + te::common::Convert2String(i); // TEMP
     addOcurrenciesProperty(regParams, destinyId, propertyName);
+
+    m_outputParams->m_propNames.push_back(propertyName);
   }
 
   ComplexDataSet complexDataSet = simpleDataSet->convertToDataSet();

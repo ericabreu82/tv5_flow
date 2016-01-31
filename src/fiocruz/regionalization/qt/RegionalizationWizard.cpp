@@ -24,12 +24,15 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 // TerraLib
+#include <terralib/common/Globals.h>
 #include <terralib/common/STLUtils.h>
 #include <terralib/dataaccess/utils/Utils.h>
 #include <terralib/maptools/Grouping.h>
+#include <terralib/maptools/GroupingAlgorithms.h>
 #include <terralib/maptools/GroupingItem.h>
 #include <terralib/maptools/Utils.h>
 #include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
+#include <terralib/se/Utils.h>
 
 // Plugin
 #include "../Regionalization.h"
@@ -67,6 +70,17 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::validateCurrentPage()
   if (currentPage() == m_externalTablePage.get())
   {
     bool res = m_externalTablePage->isComplete();
+
+    std::vector<std::string> attrs = m_externalTablePage->getTabularAttributes();
+
+    m_regionalizationRasterPage->setAttrbutes(attrs);
+
+    te::gm::Envelope env;
+    int srid = 0;
+
+    m_externalTablePage->getExtentInfo(env, srid);
+
+    m_regionalizationRasterPage->setExtent(env, srid);
 
     te::qt::plugins::fiocruz::VecStringPair objects = m_externalTablePage->getUniqueObjects();
 
@@ -220,6 +234,100 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
     }
 
     te::common::FreeContents(legMap);
+
+    //create layers for each object calculated
+    if (m_mapPage->createIndividualMaps())
+    {
+      int attrType = te::dt::INT32_TYPE;
+      int prec = 1;
+      int slices = m_mapPage->getNSlices();
+      
+      std::auto_ptr<te::color::ColorBar> cb = m_mapPage->getColorBar();
+
+      //get data
+      te::da::DataSourcePtr ds = te::da::GetDataSource(outParams->m_oDataSource->getId());
+
+      std::auto_ptr<te::da::DataSet> dataSet = ds->getDataSet(ds->getDataSetNames()[0]);
+
+      //get info for each object
+      for (std::size_t t = 0; t < outParams->m_propNames.size(); ++t)
+      {
+        int nullValues = 0;
+        std::vector<int> values;
+
+        dataSet->moveBeforeFirst();
+
+        while (dataSet->moveNext())
+        {
+          if (dataSet->isNull(outParams->m_propNames[t]))
+          {
+            ++nullValues;
+            continue;
+          }
+
+          values.push_back(dataSet->getInt32(outParams->m_propNames[t]));
+        }
+
+        std::vector<te::map::GroupingItem*> legend;
+
+        te::map::GroupingByEqualSteps(values.begin(), values.end(), slices, legend, prec);
+
+        std::vector<te::color::RGBAColor> colorVec = cb->getSlices(legend.size());
+
+        //create layer
+        te::qt::widgets::DataSet2Layer converter(ds->getId());
+
+        te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
+
+        te::map::AbstractLayerPtr layer = converter(dt);
+
+        //create symbolizer
+        int geomType = te::map::GetGeomType(layer);
+
+        for (size_t t = 0; t < colorVec.size(); ++t)
+        {
+          std::vector<te::se::Symbolizer*> symbVec;
+
+          te::se::Symbolizer* s = te::se::CreateSymbolizer((te::gm::GeomType)geomType, colorVec[t].getColor());
+
+          symbVec.push_back(s);
+
+          legend[t]->setSymbolizers(symbVec);
+        }
+
+        //create null grouping item
+        if (nullValues != 0)
+        {
+          te::map::GroupingItem* legendItem = new te::map::GroupingItem;
+          legendItem->setLowerLimit(te::common::Globals::sm_nanStr);
+          legendItem->setUpperLimit(te::common::Globals::sm_nanStr);
+          legendItem->setTitle("No Value");
+          legendItem->setCount(nullValues);
+
+          std::vector<te::se::Symbolizer*> symbVec;
+          te::se::Symbolizer* s = te::se::CreateSymbolizer((te::gm::GeomType)geomType, "#dddddd");
+          symbVec.push_back(s);
+          legendItem->setSymbolizers(symbVec);
+
+          legend.push_back(legendItem);
+        }
+
+        //create grouping
+        te::map::Grouping* group = new te::map::Grouping(outParams->m_propNames[t], te::map::EQUAL_STEPS);
+        group->setPropertyType(attrType);
+        group->setNumSlices(slices);
+        group->setPrecision(prec);
+        group->setStdDeviation(0.);
+        group->setGroupingItems(legend);
+
+        layer->setGrouping(group);
+
+        layer->setTitle(layer->getTitle() + "_" + outParams->m_propNames[t]);
+
+        //add layer to output layers
+        m_outputLayers.push_back(layer);
+      }
+    }
   }
 
   return res;

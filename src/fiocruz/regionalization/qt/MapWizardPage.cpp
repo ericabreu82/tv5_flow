@@ -103,3 +103,20 @@ std::vector<te::qt::plugins::fiocruz::DominanceParams> te::qt::plugins::fiocruz:
 
   return dominances;
 }
+
+bool te::qt::plugins::fiocruz::MapWizardPage::createIndividualMaps()
+{
+  return m_ui->m_individualMapsGroupBox->isChecked();
+}
+
+int te::qt::plugins::fiocruz::MapWizardPage::getNSlices()
+{
+  return m_ui->m_slicesSpinBox->value();
+}
+
+std::auto_ptr<te::color::ColorBar> te::qt::plugins::fiocruz::MapWizardPage::getColorBar()
+{
+  std::auto_ptr<te::color::ColorBar> cb(m_colorBar->getColorBar()->getColorBar());
+
+  return cb;
+}

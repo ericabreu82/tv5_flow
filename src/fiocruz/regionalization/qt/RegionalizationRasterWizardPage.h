@@ -68,7 +68,13 @@ namespace te
 
         public:
 
-          void setList(std::list<te::map::AbstractLayerPtr>& layerList);
+          void setAttrbutes(std::vector<std::string>& attrs);
+
+          bool hasSpatialInformation();
+
+          void getSpatialAttributesNames(std::string& xAttr, std::string& yAttr);
+
+          void setExtent(te::gm::Envelope env, int srid);
 
         protected:
 
@@ -77,6 +83,10 @@ namespace te
         private:
 
           std::auto_ptr<Ui::RegionalizationRasterWizardPageForm> m_ui;
+
+          te::gm::Envelope m_envelope;
+
+          int m_srid;
 
         };
       }   // end namespace fiocruz

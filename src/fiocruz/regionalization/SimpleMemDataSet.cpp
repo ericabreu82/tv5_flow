@@ -30,6 +30,35 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "terralib/memory/DataSet.h"
 #include "terralib/memory/DataSetItem.h"
 
+te::qt::plugins::fiocruz::ComplexDataSet::ComplexDataSet(te::da::DataSet* dataSet, te::da::DataSetType*  dataSetType)
+  : m_dataSet(dataSet)
+  , m_dataSetType(dataSetType)
+{
+
+}
+
+bool te::qt::plugins::fiocruz::ComplexDataSet::isValid() const
+{
+  if (m_dataSet != 0 && m_dataSetType != 0)
+  {
+    return true;
+  }
+
+  return false;
+}
+
+te::da::DataSet* te::qt::plugins::fiocruz::ComplexDataSet::getDataSet() const
+{
+  return m_dataSet;
+}
+
+te::da::DataSetType* te::qt::plugins::fiocruz::ComplexDataSet::getDataSetType() const
+{
+  return m_dataSetType;
+}
+
+
+
 te::qt::plugins::fiocruz::SimpleMemDataSet::SimpleMemDataSet(te::da::DataSetType* dataSetType)
   : m_dataSetType(dataSetType)
 {
@@ -138,9 +167,6 @@ te::qt::plugins::fiocruz::ComplexDataSet te::qt::plugins::fiocruz::SimpleMemData
     memDataSet->add(item);
   }
 
-  ComplexDataSet complexDataSet;
-  complexDataSet.m_dataSet = memDataSet;
-  complexDataSet.m_dataSetType = memDataSetType;
-
+  ComplexDataSet complexDataSet(memDataSet, memDataSetType);
   return complexDataSet;
 }

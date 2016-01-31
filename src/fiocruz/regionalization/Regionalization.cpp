@@ -128,7 +128,7 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
 
   //try to save
   //exchange
-  te::da::DataSetTypeConverter* converter = new te::da::DataSetTypeConverter(complexDataSet.m_dataSetType, oDataSource->getCapabilities(), oDataSource->getEncoding());
+  te::da::DataSetTypeConverter* converter = new te::da::DataSetTypeConverter(complexDataSet.getDataSetType(), oDataSource->getCapabilities(), oDataSource->getEncoding());
 
   te::da::DataSetType* dsTypeResult = converter->getResult();
 
@@ -136,7 +136,7 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
 
   oDataSource->createDataSet(dsTypeResult, nopt);
 
-  std::auto_ptr<te::da::DataSetAdapter> dsAdapter(te::da::CreateAdapter(complexDataSet.m_dataSet, converter));
+  std::auto_ptr<te::da::DataSetAdapter> dsAdapter(te::da::CreateAdapter(complexDataSet.getDataSet(), converter));
 
   oDataSource->add(dsTypeResult->getName(), dsAdapter.get(), oDataSource->getConnectionInfo());
   //std::map<std::string, std::string> mapOptions;

@@ -30,6 +30,7 @@ namespace te
 {
   namespace da
   {
+    class DataSet;
     class DataSetType;
   }
 
@@ -53,7 +54,17 @@ namespace te
         class ComplexDataSet
         {
           public:
-            te::mem::DataSet*     m_dataSet;
+
+            ComplexDataSet(te::da::DataSet* dataSet, te::da::DataSetType*  dataSetType);
+
+            bool isValid() const;
+
+            te::da::DataSet* getDataSet() const;
+            te::da::DataSetType* getDataSetType() const;
+
+          protected:
+
+            te::da::DataSet*      m_dataSet;
             te::da::DataSetType*  m_dataSetType;
         };
 

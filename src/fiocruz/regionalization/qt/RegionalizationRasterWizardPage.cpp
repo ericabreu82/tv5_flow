@@ -47,6 +47,8 @@ m_ui(new Ui::RegionalizationRasterWizardPageForm)
 
   //fill interface
   fillKernelParameters();
+
+  m_srid = 0;
 }
 
 te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::~RegionalizationRasterWizardPage()
@@ -59,9 +61,40 @@ bool te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::isComplete() con
   return true;
 }
 
-void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::setList(std::list<te::map::AbstractLayerPtr>& layerList)
+void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::setAttrbutes(std::vector<std::string>& attrs)
 {
+  m_ui->m_xAttrComboBox->clear();
+  m_ui->m_yAttrComboBox->clear();
 
+  //set properties from tabular layer into combos
+  for (std::size_t t = 0; t < attrs.size(); ++t)
+  {
+    m_ui->m_xAttrComboBox->addItem(attrs[t].c_str());
+    m_ui->m_yAttrComboBox->addItem(attrs[t].c_str());
+  }
+}
+
+bool te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::hasSpatialInformation()
+{
+  return m_ui->m_spatialInfoGroupBox->isChecked();
+}
+
+void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getSpatialAttributesNames(std::string& xAttr, std::string& yAttr)
+{
+  xAttr = m_ui->m_xAttrComboBox->currentText().toStdString();
+  yAttr = m_ui->m_yAttrComboBox->currentText().toStdString();
+}
+
+void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::setExtent(te::gm::Envelope env, int srid)
+{
+  m_envelope = env;
+
+  m_srid = srid;
+
+  double val = std::max(env.getHeight(), env.getWidth());
+
+  m_ui->m_radiusHorizontalSlider->setMinimum(0);
+  m_ui->m_radiusHorizontalSlider->setMaximum(int(val));
 }
 
 void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::fillKernelParameters()

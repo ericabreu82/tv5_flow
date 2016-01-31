@@ -78,6 +78,10 @@ namespace te
 
           te::qt::plugins::fiocruz::RegionalizationInputParams* getRegionalizationInputParameters();
 
+          std::vector<std::string> getTabularAttributes();
+
+          void getExtentInfo(te::gm::Envelope& env, int& srid);;
+
         public slots:
 
         void onSpatialLayerComboBoxActivated(int index);

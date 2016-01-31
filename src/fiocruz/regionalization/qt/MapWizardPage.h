@@ -27,6 +27,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #define __FIOCRUZ_INTERNAL_REGIONALIZATION_MAPWIZARDPAGE_H
 
 // TerraLib
+#include <terralib/color/ColorBar.h>
 #include <terralib/maptools/AbstractLayer.h>
 #include "../../Config.h"
 
@@ -76,6 +77,12 @@ namespace te
           void setList(std::list<te::map::AbstractLayerPtr>& layerList);
 
           std::vector<DominanceParams> getDominances();
+          
+          bool createIndividualMaps();
+
+          int getNSlices();
+
+          std::auto_ptr<te::color::ColorBar> getColorBar();
 
         private:
 

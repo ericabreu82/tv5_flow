@@ -166,6 +166,42 @@ te::qt::plugins::fiocruz::RegionalizationInputParams* te::qt::plugins::fiocruz::
   return params;
 }
 
+std::vector<std::string> te::qt::plugins::fiocruz::ExternalTableWizardPage::getTabularAttributes()
+{
+  QVariant varLayer = m_ui->m_tabularLayerComboBox->itemData(m_ui->m_tabularLayerComboBox->currentIndex(), Qt::UserRole);
+
+  te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
+
+  std::vector<std::string> values;
+
+  //set properties from tabular layer into vector
+  std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
+
+  for (std::size_t t = 0; t < dsType->getProperties().size(); ++t)
+  {
+    te::dt::Property* prop = dsType->getProperties()[t];
+
+    if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::STRING_TYPE)
+    {
+      values.push_back(dsType->getProperties()[t]->getName());
+    }
+  }
+
+  return values;
+}
+
+void te::qt::plugins::fiocruz::ExternalTableWizardPage::getExtentInfo(te::gm::Envelope& env, int& srid)
+{
+  //get vectorial layer
+  QVariant varVecLayer = m_ui->m_spatialLayerComboBox->currentData(Qt::UserRole);
+
+  te::map::AbstractLayerPtr dsVecLayer = varVecLayer.value<te::map::AbstractLayerPtr>();
+
+  srid = dsVecLayer->getSRID();
+
+  env = dsVecLayer->getExtent();
+}
+
 void te::qt::plugins::fiocruz::ExternalTableWizardPage::onSpatialLayerComboBoxActivated(int index)
 {
   QVariant varLayer = m_ui->m_spatialLayerComboBox->itemData(index, Qt::UserRole);

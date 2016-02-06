@@ -30,6 +30,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/sa/Enums.h>
 
 // Qt
+#include <QFileDialog>
 #include <QMessageBox>
 
 Q_DECLARE_METATYPE(te::map::AbstractLayerPtr);
@@ -48,6 +49,12 @@ m_ui(new Ui::RegionalizationRasterWizardPageForm)
   //fill interface
   fillKernelParameters();
 
+  //connects
+  connect(m_ui->m_resXLineEdit, SIGNAL(editingFinished()), this, SLOT(onResXLineEditEditingFinished()));
+  connect(m_ui->m_resYLineEdit, SIGNAL(editingFinished()), this, SLOT(onResYLineEditEditingFinished()));
+  connect(m_ui->m_targetFileToolButton, SIGNAL(clicked()), this, SLOT(onTargetFileToolButtonClicked()));
+  connect(m_ui->m_newLayerNameLineEdit, SIGNAL(editingFinished()), this, SIGNAL(completeChanged()));
+
   m_srid = 0;
 }
 
@@ -58,6 +65,15 @@ te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::~RegionalizationRaste
 
 bool te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::isComplete() const
 {
+  if (m_ui->m_repositoryLineEdit->text().isEmpty())
+    return false;
+
+  if (m_ui->m_newLayerNameLineEdit->text().isEmpty())
+    return false;
+
+  if (m_ui->m_resXLineEdit->text().isEmpty() || m_ui->m_resYLineEdit->text().isEmpty())
+    return false;
+
   return true;
 }
 
@@ -97,6 +113,42 @@ void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::setExtent(te::gm
   m_ui->m_radiusHorizontalSlider->setMaximum(int(val));
 }
 
+void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::onResXLineEditEditingFinished()
+{
+  double resX = m_ui->m_resXLineEdit->text().toDouble();
+  //unitConvertion(resX, getResolutionUnit(), te::srs::SpatialReferenceSystemManager::getInstance().getUnit(m_bbSRID));
+
+  int maxCols = (int)ceil((m_envelope.m_urx - m_envelope.m_llx) / resX);
+
+  m_ui->m_colsLineEdit->setText(QString::number(maxCols));
+
+  emit completeChanged();
+}
+
+void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::onResYLineEditEditingFinished()
+{
+  double resY = m_ui->m_resYLineEdit->text().toDouble();
+  //unitConvertion(resY, getResolutionUnit(), te::srs::SpatialReferenceSystemManager::getInstance().getUnit(m_bbSRID));
+
+  int maxRows = (int)ceil((m_envelope.m_ury - m_envelope.m_lly) / resY);
+
+  m_ui->m_rowsLineEdit->setText(QString::number(maxRows));
+
+  emit completeChanged();
+}
+
+void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::onTargetFileToolButtonClicked()
+{
+  QString dir = QFileDialog::getExistingDirectory(this, tr("Select directory to save rasters"));
+
+  if (dir.isEmpty() == false)
+  {
+    m_ui->m_repositoryLineEdit->setText(dir);
+  }
+
+  emit completeChanged();
+}
+
 void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::fillKernelParameters()
 {
   //function
@@ -107,11 +159,4 @@ void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::fillKernelParame
   m_ui->m_functionComboBox->addItem("Triangular", QVariant(te::sa::Triangular));
   m_ui->m_functionComboBox->addItem("Uniform", QVariant(te::sa::Uniform));
   m_ui->m_functionComboBox->addItem("Negative Exponential", QVariant(te::sa::Negative_Exp));
-
-  //estimation
-  m_ui->m_estimationComboBox->clear();
-
-  m_ui->m_estimationComboBox->addItem("Density", QVariant(te::sa::Density));
-  m_ui->m_estimationComboBox->addItem("Spatial Moving Average", QVariant(te::sa::Spatial_Moving_Average));
-  m_ui->m_estimationComboBox->addItem("Probability", QVariant(te::sa::Probability));
 }

@@ -80,7 +80,8 @@ void te::qt::plugins::fiocruz::ExternalTableWizardPage::setList(std::list<te::ma
 
     if (dsType->hasGeom())
       m_ui->m_spatialLayerComboBox->addItem(l->getTitle().c_str(), QVariant::fromValue(l));
-    else if (!dsType->hasGeom() && !dsType->hasRaster())
+    
+    if (!dsType->hasRaster())
       m_ui->m_tabularLayerComboBox->addItem(l->getTitle().c_str(), QVariant::fromValue(l));
 
     ++it;
@@ -181,7 +182,7 @@ std::vector<std::string> te::qt::plugins::fiocruz::ExternalTableWizardPage::getT
   {
     te::dt::Property* prop = dsType->getProperties()[t];
 
-    if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::STRING_TYPE)
+    if (prop->getType() == te::dt::DOUBLE_TYPE || prop->getType() == te::dt::FLOAT_TYPE)
     {
       values.push_back(dsType->getProperties()[t]->getName());
     }

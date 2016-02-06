@@ -55,32 +55,6 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="minimumSize">
-               <size>
-                <width>130</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Estimation:</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QComboBox" name="m_estimationComboBox">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-             </widget>
-            </item>
            </layout>
           </item>
          </layout>
@@ -534,7 +508,6 @@
  </widget>
  <tabstops>
   <tabstop>m_functionComboBox</tabstop>
-  <tabstop>m_estimationComboBox</tabstop>
   <tabstop>m_adaptRadiusRadioButton</tabstop>
   <tabstop>m_nNeighLineEdit</tabstop>
   <tabstop>m_fixedRadiusRadioButton</tabstop>

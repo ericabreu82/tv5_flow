@@ -76,6 +76,15 @@ namespace te
 
           void setExtent(te::gm::Envelope env, int srid);
 
+
+        protected slots:
+
+          void onResXLineEditEditingFinished();
+
+          void onResYLineEditEditingFinished();
+
+          void onTargetFileToolButtonClicked();
+
         protected:
 
           void fillKernelParameters();

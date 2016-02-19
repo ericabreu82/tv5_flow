@@ -50,8 +50,8 @@ namespace te
         typedef std::map<std::string, CoordVector > Ocurrencies;
         
         //! Gets the coordinates of all ocurrencies grouping by id. 
-        Ocurrencies GetOcurrencies(const ComplexDataSet& ocurrenciesDataSet, const std::string& idColumnName, const std::string& xColumnName, const std::string& yColumnName);
-        Ocurrencies GetOcurrencies(const ComplexDataSet& ocurrenciesDataSet, const std::string& idColumnName, const ComplexDataSet& originDataSet, const std::string& linkColumnName);
+        Ocurrencies GetOcurrencies(const ComplexDataSet& ocurrenciesDataDriver, const std::string& destinyIdColumnName, const std::string& xColumnName, const std::string& yColumnName, const std::string& destinyIdFilter);
+        Ocurrencies GetOcurrencies(const ComplexDataSet& ocurrenciesDataDriver, const std::string& destinyIdColumnName, const std::string& originLinkColumnName, const ComplexDataSet& originDataDriver, const std::string& originIdColumnName, const std::string& destinyIdFilter);
 
 
         //! Builds a KDTree from a theme with samples: the theme must have a point representation
@@ -67,8 +67,8 @@ namespace te
         bool RasterInterpolate(const Ocurrencies& ocurrencies,
           te::rst::Raster* outputRaster, const int& band,
           const KernelInterpolationAlgorithm& algorithm,
-          const KernelInterpolationMethod& method,
-          const unsigned int& numberOfNeighbors, const double& boxRatio);
+          const te::sa::KernelFunctionType& method,
+          const size_t& numberOfNeighbors, const double& boxRatio);
       }
     }
   }

@@ -31,17 +31,19 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "terralib/dataaccess/dataset/DataSetType.h"
 #include "terralib/dataaccess/utils/Utils.h"
 #include "terralib/geometry/GeometryProperty.h"
+#include "terralib/geometry/MultiPolygon.h"
+#include "terralib/geometry/Polygon.h"
 #include "terralib/raster/Grid.h"
 #include "terralib/raster/Raster.h"
 
 #include <boost/lexical_cast.hpp>
 
-te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(const ComplexDataSet& ocurrenciesDataSet, const std::string& idColumnName, const std::string& xColumnName, const std::string& yColumnName)
+te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(const ComplexDataSet& ocurrenciesDataDriver, const std::string& destinyIdColumnName, const std::string& xColumnName, const std::string& yColumnName, const std::string& destinyIdFilter)
 {
   Ocurrencies ocurrencies;
 
-  te::da::DataSet* dataSet = ocurrenciesDataSet.getDataSet();
-  te::da::DataSetType* dataSetType = ocurrenciesDataSet.getDataSetType();
+  te::da::DataSet* dataSet = ocurrenciesDataDriver.getDataSet();
+  te::da::DataSetType* dataSetType = ocurrenciesDataDriver.getDataSetType();
 
   int typeX = dataSetType->getProperty(xColumnName)->getType();
   int typeY = dataSetType->getProperty(yColumnName)->getType();
@@ -51,7 +53,12 @@ te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(c
   dataSet->moveBeforeFirst();
   while (dataSet->moveNext())
   {
-    std::string id = dataSet->getString(idColumnName);
+    std::string destinyId = dataSet->getString(destinyIdColumnName);
+    if (destinyIdFilter.empty() == false && destinyIdFilter != destinyId)
+    {
+      continue;
+    }
+
     double x = 0.;
     double y = 0.;
 
@@ -97,7 +104,7 @@ te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(c
 
   return ocurrencies;
 }
-te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(const ComplexDataSet& ocurrenciesDataDriver, const std::string& idColumnName, const ComplexDataSet& originDataDriver, const std::string& linkColumnName)
+te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(const ComplexDataSet& ocurrenciesDataDriver, const std::string& destinyIdColumnName, const std::string& originLinkColumnName, const ComplexDataSet& originDataDriver, const std::string& originIdColumnName, const std::string& destinyIdFilter)
 {
   Ocurrencies ocurrencies;
   //we first get the centroids from the polygons of the originDataSet and create a map
@@ -114,7 +121,8 @@ te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(c
   originDataSet->moveBeforeFirst();
   while (originDataSet->moveNext())
   {
-    std::string id = originDataSet->getString(linkColumnName);
+    std::string originId = originDataSet->getString(originIdColumnName);
+
     std::auto_ptr<te::gm::Geometry> geometry = originDataSet->getGeometry(originGeometryProperty->getName());
     if (geomType == te::gm::GeomType::PolygonType)
     {
@@ -126,7 +134,19 @@ te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(c
 
       std::auto_ptr<te::gm::Coord2D> centroid(polygon->getCentroidCoord());
       te::gm::Coord2D coord = te::gm::Coord2D(centroid->getX(), centroid->getY());
-      mapOriginCentroids[id] = coord;
+      mapOriginCentroids[originId] = coord;
+    }
+    else if (geomType == te::gm::GeomType::MultiPolygonType)
+    {
+      te::gm::MultiPolygon* polygon = dynamic_cast<te::gm::MultiPolygon*>(geometry.get());
+      if (polygon == 0)
+      {
+        continue;
+      }
+
+      std::auto_ptr<te::gm::Coord2D> centroid(polygon->getCentroidCoord());
+      te::gm::Coord2D coord = te::gm::Coord2D(centroid->getX(), centroid->getY());
+      mapOriginCentroids[originId] = coord;
     }
   }
 
@@ -134,8 +154,14 @@ te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(c
   ocurrenciesDataSet->moveBeforeFirst();
   while (ocurrenciesDataSet->moveNext())
   {
-    std::string id = ocurrenciesDataSet->getString(idColumnName);
-    std::map<std::string, te::gm::Coord2D>::iterator itOrigin = mapOriginCentroids.find(id);
+    std::string destinyId = ocurrenciesDataSet->getString(destinyIdColumnName);
+    if (destinyIdFilter.empty() == false && destinyIdFilter != destinyId)
+    {
+      continue;
+    }
+
+    std::string originId = ocurrenciesDataSet->getString(originLinkColumnName);
+    std::map<std::string, te::gm::Coord2D>::iterator itOrigin = mapOriginCentroids.find(originId);
     if (itOrigin == mapOriginCentroids.end())
     {
       continue;
@@ -213,8 +239,8 @@ bool te::qt::plugins::fiocruz::BuildKDTree(const Ocurrencies& ocurrencies, Kerne
 bool te::qt::plugins::fiocruz::RasterInterpolate(const Ocurrencies& ocurrencies,
   te::rst::Raster* outputRaster, const int& band,
   const KernelInterpolationAlgorithm& algorithm,
-  const KernelInterpolationMethod& method,
-  const unsigned int& numberOfNeighbors, const double& boxRatio)
+  const te::sa::KernelFunctionType& method,
+  const size_t& numberOfNeighbors, const double& boxRatio)
 {
   if ((ocurrencies.empty() == true) || (outputRaster == 0))
   {
@@ -225,7 +251,7 @@ bool te::qt::plugins::fiocruz::RasterInterpolate(const Ocurrencies& ocurrencies,
   const te::rst::Grid* grid = outputRaster->getGrid();
   const te::gm::Envelope* mbr = outputRaster->getExtent();
   int rasterSRID = outputRaster->getSRID();
-  unsigned int bucketSize = 2 * numberOfNeighbors;
+  size_t bucketSize = 2 * numberOfNeighbors;
 
   // load tree with samaples
   KernelInterpolationAlgorithms::KD_ADAPTATIVE_TREE tree(*mbr, bucketSize);

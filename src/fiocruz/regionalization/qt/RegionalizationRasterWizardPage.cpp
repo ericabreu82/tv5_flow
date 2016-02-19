@@ -101,6 +101,82 @@ void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getSpatialAttrib
   yAttr = m_ui->m_yAttrComboBox->currentText().toStdString();
 }
 
+void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getResolution(double& resX, double& resY)
+{
+  if (m_ui->m_resXLineEdit->text().isEmpty() == true)
+  {
+    return;
+  }
+
+  if (m_ui->m_resYLineEdit->text().isEmpty() == true)
+  {
+    return;
+  }
+
+  bool converted = false;
+  resX = m_ui->m_resXLineEdit->text().toDouble(&converted);
+  if (converted == false)
+  {
+    return;
+  }
+
+  resY = m_ui->m_resYLineEdit->text().toDouble(&converted);
+  if (converted == false)
+  {
+    return;
+  }
+}
+
+te::sa::KernelFunctionType te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getKernelFunctionType()
+{
+  te::sa::KernelFunctionType currentFunction = (te::sa::KernelFunctionType) m_ui->m_functionComboBox->currentData().toInt();
+  return currentFunction;
+}
+
+te::qt::plugins::fiocruz::KernelInterpolationAlgorithm te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getKernelInterpolationAlgorithm()
+{
+  if (m_ui->m_fixedRadiusRadioButton->isChecked() == true)
+  {
+    return TeDistWeightAvgInBoxInterpolation;
+  }
+  
+  return TeDistWeightAvgInterpolation;
+}
+
+size_t te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getNumberOfNeighbours()
+{
+  if (m_ui->m_nNeighLineEdit->text().isEmpty() == true)
+  {
+    return 0;
+  }
+
+  bool converted = false;
+  uint nNeighbours = m_ui->m_nNeighLineEdit->text().toUInt(&converted);
+
+  if (converted == false)
+  {
+    return 0;
+  }
+
+  return (size_t)nNeighbours;
+}
+
+double te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getRadius()
+{
+  double value = m_ui->m_radiusHorizontalSlider->value();
+  return value;
+}
+
+std::string te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getBaseName()
+{
+  return m_ui->m_newLayerNameLineEdit->text().toStdString();
+}
+
+std::string te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::getPath()
+{
+  return m_ui->m_repositoryLineEdit->text().toStdString();
+}
+
 void te::qt::plugins::fiocruz::RegionalizationRasterWizardPage::setExtent(te::gm::Envelope env, int srid)
 {
   m_envelope = env;

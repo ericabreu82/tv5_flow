@@ -26,9 +26,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 #ifndef __FIOCRUZ_INTERNAL_REGIONALIZATION_KERNELINTERPOLATIONALGORITMS_H
 #define __FIOCRUZ_INTERNAL_REGIONALIZATION_KERNELINTERPOLATIONALGORITMS_H
 
-#include "terralib/geometry/Coord2D.h"
-#include "terralib/geometry/Point.h"
-#include "terralib/sam/kdtree.h"
+#include <terralib/geometry/Coord2D.h>
+#include <terralib/geometry/Point.h>
+#include <terralib/sam/kdtree.h>
+
+#include <terralib/sa/Enums.h>
 
 #include <map>
 #include <string>
@@ -48,18 +50,6 @@ namespace te
         - TeDistWeightAvgInBoxInterpolation  Interpolation with weight average of elements in box
         */
         enum KernelInterpolationAlgorithm { TeDistWeightAvgInterpolation, TeDistWeightAvgInBoxInterpolation };
-
-        /*! \enum TeKernelInterpolationMethod
-
-        Methods of interpolation, may be:
-        - TeQuarticKernelMethod
-        - TeNormalKernelMethod
-        - TeUniformKernelMethod
-        - TeTriangularKernelMethod
-        - TeNegExpKernelMethod
-        */
-        enum KernelInterpolationMethod { TeQuarticKernelMethod, TeNormalKernelMethod, TeUniformKernelMethod, TeTriangularKernelMethod, TeNegExpKernelMethod };
-
 
         /*!
         \class KernelInterpolationAlgorithms
@@ -92,9 +82,9 @@ namespace te
           double TeKernelNegExponential(double tau, double distance, double intensity);
 
           //! Weight Average of Nearest Neighbors. If an error occur returns -TeMAXFLOAT
-          double distWeightAvgNearestNeighbor(const te::gm::Coord2D& coord, size_t numberOfNeighbors, const KernelInterpolationMethod& method);
+          double distWeightAvgNearestNeighbor(const te::gm::Coord2D& coord, size_t numberOfNeighbors, const te::sa::KernelFunctionType& method);
 
-          double boxDistWeightAvg(const te::gm::Coord2D& coord, const te::gm::Envelope& box, const KernelInterpolationMethod& method);
+          double boxDistWeightAvg(const te::gm::Coord2D& coord, const te::gm::Envelope& box, const te::sa::KernelFunctionType& method);
 
         protected:
 

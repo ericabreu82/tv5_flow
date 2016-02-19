@@ -29,6 +29,8 @@ TerraLib Team at <terralib-team@terralib.org>.
 // TerraLib
 #include <terralib/maptools/AbstractLayer.h>
 #include "../../Config.h"
+#include "../RasterInterpolate.h"
+#include <terralib/sa/Enums.h>
 
 // STL
 #include <memory>
@@ -73,6 +75,20 @@ namespace te
           bool hasSpatialInformation();
 
           void getSpatialAttributesNames(std::string& xAttr, std::string& yAttr);
+
+          void getResolution(double& resX, double& resY);
+
+          te::sa::KernelFunctionType getKernelFunctionType();
+
+          KernelInterpolationAlgorithm getKernelInterpolationAlgorithm();
+
+          size_t getNumberOfNeighbours();
+
+          double getRadius();
+
+          std::string getBaseName();
+
+          std::string getPath();
 
           void setExtent(te::gm::Envelope env, int srid);
 

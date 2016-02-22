@@ -350,7 +350,7 @@ te::rst::Raster* createRaster(const std::string& fileName, te::gm::Envelope* env
   connInfo["URI"] = fileName;
 
   te::rst::Grid* grid = new te::rst::Grid(resX, resY, envelope, srid);
-  te::rst::BandProperty* bProp = new te::rst::BandProperty(0, te::dt::UCHAR_TYPE, "");
+  te::rst::BandProperty* bProp = new te::rst::BandProperty(0, te::dt::DOUBLE_TYPE, "");
 
   std::vector<te::rst::BandProperty*> vecBandProp;
   vecBandProp.push_back(bProp);
@@ -358,29 +358,6 @@ te::rst::Raster* createRaster(const std::string& fileName, te::gm::Envelope* env
   te::rst::Raster* raster = te::rst::RasterFactory::make("GDAL", grid, vecBandProp, connInfo);
 
   return raster;
-
-  /*
-  // create bands
-  
-
-  for (std::size_t i = 0; i < m_selectedAttVec.size(); ++i)
-  {
-    
-
-    if (m_setDummy == true)
-      bProp->m_noDataValue = m_dummy;
-
-    vecBandProp.push_back(bProp);
-  }
-
-  // create raster info
-  std::map<std::string, std::string> conInfo;
-
-  // create raster
-  std::auto_ptr<te::rst::Raster> rst(te::rst::RasterFactory::make("GDAL", grid, vecBandProp, conInfo));
-
-  te::rst::FillRaster(rst.get(), rst->getBand(0)->getProperty()->m_noDataValue);
-  */
 }
 
 bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalization()

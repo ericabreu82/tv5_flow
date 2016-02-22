@@ -295,15 +295,15 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
         //create symbolizer
         int geomType = te::map::GetGeomType(layer);
 
-        for (size_t t = 0; t < colorVec.size(); ++t)
+        for (size_t p = 0; p < colorVec.size(); ++p)
         {
           std::vector<te::se::Symbolizer*> symbVec;
 
-          te::se::Symbolizer* s = te::se::CreateSymbolizer((te::gm::GeomType)geomType, colorVec[t].getColor());
+          te::se::Symbolizer* s = te::se::CreateSymbolizer((te::gm::GeomType)geomType, colorVec[p].getColor());
 
           symbVec.push_back(s);
 
-          legend[t]->setSymbolizers(symbVec);
+          legend[p]->setSymbolizers(symbVec);
         }
 
         //create null grouping item

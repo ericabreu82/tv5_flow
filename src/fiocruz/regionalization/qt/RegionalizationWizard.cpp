@@ -384,6 +384,7 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
   //for tabular data
   te::da::DataSetPtr tabDataSet = inParams->m_iTabularDataSet;
   std::string tabColumnOriginId = inParams->m_iTabularColumnOriginId;
+  std::string tabColumnDestinyId = inParams->m_iTabularColumnDestinyId;
   std::auto_ptr<te::da::DataSetType> tabDataSetType = inParams->m_iTabularDataSource->getDataSetType(inParams->m_iTabularDataSetName);
   ComplexDataSet tabDataDriver(tabDataSet.get(), tabDataSetType.get());
 
@@ -414,7 +415,7 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
     }
     else
     {
-      ocurrencies = GetOcurrencies(tabDataDriver, tabColumnOriginId, vecDataDriver, vecColumnOriginId, currentDestiny);
+      ocurrencies = GetOcurrencies(tabDataDriver, tabColumnDestinyId, tabColumnOriginId, vecDataDriver, vecColumnOriginId, currentDestiny);
     }
     KernelInterpolationAlgorithm algorithm = m_regionalizationRasterPage->getKernelInterpolationAlgorithm();
 

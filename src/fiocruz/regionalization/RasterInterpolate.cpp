@@ -91,14 +91,14 @@ te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(c
 
     te::gm::Coord2D coord(x, y);
 
-    Ocurrencies::iterator it = ocurrencies.find(id);
+    Ocurrencies::iterator it = ocurrencies.find(destinyId);
     if (it != ocurrencies.end())
     {
       it->second.push_back(coord);
     }
     else
     {
-      ocurrencies[id].push_back(coord);
+      ocurrencies[destinyId].push_back(coord);
     }
   }
 
@@ -172,14 +172,14 @@ te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(c
 
     te::gm::Coord2D coord(x, y);
 
-    Ocurrencies::iterator it = ocurrencies.find(id);
+    Ocurrencies::iterator it = ocurrencies.find(destinyId);
     if (it != ocurrencies.end())
     {
       it->second.push_back(coord);
     }
     else
     {
-      ocurrencies[id].push_back(coord);
+      ocurrencies[destinyId].push_back(coord);
     }
   }
 

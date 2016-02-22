@@ -38,11 +38,11 @@ te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::~KernelInterpolationAlg
 }
 
 //! Fills the nearest neighbour vector with default values
-void te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::fillNNVector(std::vector<te::gm::Point>& report, size_t numberOfNeighbors) const
+void te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::fillNNVector(std::vector<te::gm::PointM>& report, size_t numberOfNeighbors) const
 {
   for (unsigned int i = 0; i < numberOfNeighbors; ++i)
   {
-    te::gm::Point point(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+    te::gm::PointM point(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 0);
     report.push_back(point);
   }
 }
@@ -93,7 +93,7 @@ double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::distWeightAvgNea
 {
   te::gm::Point refPoint(coord.getX(), coord.getY());
 
-  std::vector<te::gm::Point> reportItem;
+  std::vector<te::gm::PointM> reportItem;
   std::vector<double> sqrDists;
 
   fillNNVector(reportItem, numberOfNeighbors);
@@ -156,7 +156,7 @@ double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::distWeightAvgNea
 }
 
 //! Distance Weight Average of Elements in Box. If an error occur returns -TeMAXFLOAT
-double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::boxDistWeightAvg(const te::gm::Coord2D& coord, const te::gm::Envelope& box, const const te::sa::KernelFunctionType& method)
+double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::boxDistWeightAvg(const te::gm::Coord2D& coord, const te::gm::Envelope& box, const te::sa::KernelFunctionType& method)
 {
   te::gm::Point refPoint(coord.getX(), coord.getY());
 

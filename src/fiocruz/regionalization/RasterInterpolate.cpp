@@ -32,6 +32,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "terralib/dataaccess/utils/Utils.h"
 #include "terralib/geometry/GeometryProperty.h"
 #include "terralib/geometry/MultiPolygon.h"
+#include "terralib/geometry/PointM.h"
 #include "terralib/geometry/Polygon.h"
 #include "terralib/raster/Grid.h"
 #include "terralib/raster/Raster.h"
@@ -193,7 +194,7 @@ bool te::qt::plugins::fiocruz::BuildKDTree(const Ocurrencies& ocurrencies, Kerne
     return false;
   }
 
-  std::vector< std::pair< te::gm::Coord2D, te::gm::Point > > inputVector;
+  std::vector< std::pair< te::gm::Coord2D, te::gm::PointM > > inputVector;
 
   Ocurrencies::const_iterator it = ocurrencies.begin();
   while (it != ocurrencies.end())
@@ -220,10 +221,9 @@ bool te::qt::plugins::fiocruz::BuildKDTree(const Ocurrencies& ocurrencies, Kerne
     {
       te::gm::Coord2D coord = itCount->first;
       
-      te::gm::Point point(coord.getX(), coord.getY());
-      point.setM(itCount->second);
+      te::gm::PointM point(coord.getX(), coord.getY(), itCount->second);
 
-      inputVector.push_back(std::pair<te::gm::Coord2D, te::gm::Point>(coord, point));
+      inputVector.push_back(std::pair<te::gm::Coord2D, te::gm::PointM>(coord, point));
 
       ++itCount;
     }

@@ -27,7 +27,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #define __FIOCRUZ_INTERNAL_REGIONALIZATION_KERNELINTERPOLATIONALGORITMS_H
 
 #include <terralib/geometry/Coord2D.h>
-#include <terralib/geometry/Point.h>
+#include <terralib/geometry/PointM.h>
 #include <terralib/sam/kdtree.h>
 
 #include <terralib/sa/Enums.h>
@@ -62,14 +62,14 @@ namespace te
 
         public:
 
-          typedef te::sam::kdtree::AdaptativeNode<te::gm::Coord2D, std::vector<te::gm::Point>, te::gm::Point> KD_ADAPTATIVE_NODE;
+          typedef te::sam::kdtree::AdaptativeNode<te::gm::Coord2D, std::vector<te::gm::PointM>, te::gm::PointM> KD_ADAPTATIVE_NODE;
           typedef te::sam::kdtree::AdaptativeIndex<KD_ADAPTATIVE_NODE> KD_ADAPTATIVE_TREE;
 
           KernelInterpolationAlgorithms(const KD_ADAPTATIVE_TREE& adaptativeTree);
 
           virtual ~KernelInterpolationAlgorithms();
 
-          void fillNNVector(std::vector<te::gm::Point>& report, size_t numberOfNeighbors) const;
+          void fillNNVector(std::vector<te::gm::PointM>& report, size_t numberOfNeighbors) const;
 
           double TeKernelQuartic(double tau, double distance, double intensity);
 

@@ -450,6 +450,7 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
 
     RasterInterpolate(ocurrencies, outputRaster, band, algorithm, kernelFunction, numberOfNeighbours, boxRatio);
 
+    delete outputRaster;
   }
 
   return true;

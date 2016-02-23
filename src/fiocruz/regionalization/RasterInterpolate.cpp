@@ -34,6 +34,8 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "terralib/geometry/MultiPolygon.h"
 #include "terralib/geometry/PointM.h"
 #include "terralib/geometry/Polygon.h"
+#include "terralib/raster/Band.h"
+#include "terralib/raster/BandProperty.h"
 #include "terralib/raster/Grid.h"
 #include "terralib/raster/Raster.h"
 
@@ -271,7 +273,7 @@ bool te::qt::plugins::fiocruz::RasterInterpolate(const Ocurrencies& ocurrencies,
   int nLines = outputRaster->getNumberOfRows();
   int nCols = outputRaster->getNumberOfColumns();
 
-  double value = -std::numeric_limits<double>::max();
+  double value = outputRaster->getBand(0)->getProperty()->m_noDataValue;
 
   if (algorithm == TeDistWeightAvgInterpolation)
   {

@@ -38,6 +38,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/raster/Grid.h>
 #include <terralib/raster/Raster.h>
 #include <terralib/raster/RasterFactory.h>
+#include <terralib/raster/Utils.h>
 #include <terralib/se/Utils.h>
 
 // Plugin
@@ -63,7 +64,7 @@ te::qt::plugins::fiocruz::RegionalizationWizard::RegionalizationWizard(QWidget* 
   //configure the wizard
   this->setWizardStyle(QWizard::ModernStyle);
   this->setWindowTitle(tr("Reginalization Maps."));
-  this->setFixedSize(QSize(740, 580));
+  this->setFixedSize(QSize(740, 600));
 
   addPages();
 }
@@ -354,11 +355,14 @@ te::rst::Raster* createRaster(const std::string& fileName, te::gm::Envelope* env
 
   te::rst::Grid* grid = new te::rst::Grid(resX, resY, envelope, srid);
   te::rst::BandProperty* bProp = new te::rst::BandProperty(0, te::dt::DOUBLE_TYPE, "");
+  bProp->m_noDataValue = 0.;
 
   std::vector<te::rst::BandProperty*> vecBandProp;
   vecBandProp.push_back(bProp);
 
   te::rst::Raster* raster = te::rst::RasterFactory::make("GDAL", grid, vecBandProp, connInfo);
+
+  te::rst::FillRaster(raster, bProp->m_noDataValue);
 
   return raster;
 }
@@ -377,7 +381,6 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
   std::size_t geomColumnPos = te::da::GetFirstPropertyPos(vecDataSet.get(), te::dt::GEOMETRY_TYPE);
   te::gm::GeometryProperty* geomProperty = te::da::GetFirstGeomProperty(vecDataSetType.get());
   int srid = geomProperty->getSRID();
-  te::gm::Envelope* envelope = inParams->m_iVectorDataSet->getExtent(geomColumnPos).release();
 
   std::string path = m_regionalizationRasterPage->getPath();
   std::string baseName = m_regionalizationRasterPage->getBaseName();
@@ -423,6 +426,8 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
     KernelInterpolationAlgorithm algorithm = m_regionalizationRasterPage->getKernelInterpolationAlgorithm();
 
     //criar raster
+    te::gm::Envelope* envelope = inParams->m_iVectorDataSet->getExtent(geomColumnPos).release();
+
     te::rst::Raster* outputRaster = createRaster(fileName, envelope, resX, resY, srid);
 
     int band = 0; //fixed

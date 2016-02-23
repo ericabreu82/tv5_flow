@@ -27,15 +27,22 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/common/Globals.h>
 #include <terralib/common/STLUtils.h>
 #include <terralib/dataaccess/utils/Utils.h>
+#include <terralib/geometry/Envelope.h>
+#include <terralib/geometry/GeometryProperty.h>
 #include <terralib/maptools/Grouping.h>
 #include <terralib/maptools/GroupingAlgorithms.h>
 #include <terralib/maptools/GroupingItem.h>
 #include <terralib/maptools/Utils.h>
 #include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
+#include <terralib/raster/BandProperty.h>
+#include <terralib/raster/Grid.h>
+#include <terralib/raster/Raster.h>
+#include <terralib/raster/RasterFactory.h>
 #include <terralib/se/Utils.h>
 
 // Plugin
 #include "../Regionalization.h"
+#include "../RasterInterpolate.h"
 #include "RegionalizationWizard.h"
 
 #include "ExternalTableWizardPage.h"
@@ -43,6 +50,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "MapWizardPage.h"
 #include "RegionalizationRasterWizardPage.h"
 #include "RegionalizationVectorWizardPage.h"
+#include "../SimpleMemDataSet.h"
 
 // Qt Includes
 #include <QMessageBox>
@@ -111,7 +119,10 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::validateCurrentPage()
   }
   else if (m_regionalizationType == te::qt::plugins::fiocruz::Raster_Regionalization && currentPage() == m_regionalizationRasterPage.get())
   {
-    return m_regionalizationRasterPage->isComplete();
+    if (!m_regionalizationRasterPage->isComplete())
+      return false;
+
+    return executeRasterRegionalization();
   }
 
   return false;
@@ -287,15 +298,15 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
         //create symbolizer
         int geomType = te::map::GetGeomType(layer);
 
-        for (size_t t = 0; t < colorVec.size(); ++t)
+        for (size_t p = 0; p < colorVec.size(); ++p)
         {
           std::vector<te::se::Symbolizer*> symbVec;
 
-          te::se::Symbolizer* s = te::se::CreateSymbolizer((te::gm::GeomType)geomType, colorVec[t].getColor());
+          te::se::Symbolizer* s = te::se::CreateSymbolizer((te::gm::GeomType)geomType, colorVec[p].getColor());
 
           symbVec.push_back(s);
 
-          legend[t]->setSymbolizers(symbVec);
+          legend[p]->setSymbolizers(symbVec);
         }
 
         //create null grouping item
@@ -334,4 +345,93 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
   }
 
   return res;
+}
+
+te::rst::Raster* createRaster(const std::string& fileName, te::gm::Envelope* envelope, double resX, double resY, int srid)
+{
+  std::map<std::string, std::string> connInfo;
+  connInfo["URI"] = fileName;
+
+  te::rst::Grid* grid = new te::rst::Grid(resX, resY, envelope, srid);
+  te::rst::BandProperty* bProp = new te::rst::BandProperty(0, te::dt::DOUBLE_TYPE, "");
+
+  std::vector<te::rst::BandProperty*> vecBandProp;
+  vecBandProp.push_back(bProp);
+
+  te::rst::Raster* raster = te::rst::RasterFactory::make("GDAL", grid, vecBandProp, connInfo);
+
+  return raster;
+}
+
+bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalization()
+{
+  //we first get the parameters from the interface
+  RegionalizationInputParams* inParams = m_externalTablePage->getRegionalizationInputParameters();
+  inParams->m_vecDominance = m_mapPage->getDominances();
+  inParams->m_objects = m_legendPage->getObjects();
+
+  //for vector data
+  te::da::DataSetPtr vecDataSet = inParams->m_iVectorDataSet;
+  std::string vecColumnOriginId = inParams->m_iVectorColumnOriginId;
+  std::auto_ptr<te::da::DataSetType> vecDataSetType = inParams->m_iVectorDataSource->getDataSetType(inParams->m_iVectorDataSetName);
+  std::size_t geomColumnPos = te::da::GetFirstPropertyPos(vecDataSet.get(), te::dt::GEOMETRY_TYPE);
+  te::gm::GeometryProperty* geomProperty = te::da::GetFirstGeomProperty(vecDataSetType.get());
+  int srid = geomProperty->getSRID();
+  te::gm::Envelope* envelope = inParams->m_iVectorDataSet->getExtent(geomColumnPos).release();
+
+  std::string path = m_regionalizationRasterPage->getPath();
+  std::string baseName = m_regionalizationRasterPage->getBaseName();
+
+  ComplexDataSet vecDataDriver(vecDataSet.get(), vecDataSetType.get());
+
+  //for tabular data
+  te::da::DataSetPtr tabDataSet = inParams->m_iTabularDataSet;
+  std::string tabColumnOriginId = inParams->m_iTabularColumnOriginId;
+  std::string tabColumnDestinyId = inParams->m_iTabularColumnDestinyId;
+  std::auto_ptr<te::da::DataSetType> tabDataSetType = inParams->m_iTabularDataSource->getDataSetType(inParams->m_iTabularDataSetName);
+  ComplexDataSet tabDataDriver(tabDataSet.get(), tabDataSetType.get());
+
+  bool hasSpatialInformation = m_regionalizationRasterPage->hasSpatialInformation();
+  te::sa::KernelFunctionType kernelFunction = m_regionalizationRasterPage->getKernelFunctionType();
+  size_t numberOfNeighbours = m_regionalizationRasterPage->getNumberOfNeighbours();
+  double boxRatio = m_regionalizationRasterPage->getRadius();
+
+  std::string xAttrName;
+  std::string yAttrName;
+  m_regionalizationRasterPage->getSpatialAttributesNames(xAttrName, yAttrName);
+
+  double resX = 0.;
+  double resY = 0.;
+  m_regionalizationRasterPage->getResolution(resX, resY);
+
+  for (size_t i = 0; i < inParams->m_objects.size(); ++i)
+  {
+    std::string currentDestiny = inParams->m_objects[i];
+
+    std::string fileName = path + "/" + baseName + "_" + currentDestiny + ".tif";
+
+    //read the ocurrencies
+    Ocurrencies ocurrencies;
+    if (hasSpatialInformation == true)
+    {
+      ocurrencies = GetOcurrencies(tabDataDriver, tabColumnOriginId, xAttrName, yAttrName, currentDestiny);
+    }
+    else
+    {
+      ocurrencies = GetOcurrencies(tabDataDriver, tabColumnDestinyId, tabColumnOriginId, vecDataDriver, vecColumnOriginId, currentDestiny);
+    }
+    KernelInterpolationAlgorithm algorithm = m_regionalizationRasterPage->getKernelInterpolationAlgorithm();
+
+    //criar raster
+    te::rst::Raster* outputRaster = createRaster(fileName, envelope, resX, resY, srid);
+
+    int band = 0; //fixed
+
+
+    RasterInterpolate(ocurrencies, outputRaster, band, algorithm, kernelFunction, numberOfNeighbours, boxRatio);
+
+    delete outputRaster;
+  }
+
+  return true;
 }

@@ -38,11 +38,11 @@ te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::~KernelInterpolationAlg
 }
 
 //! Fills the nearest neighbour vector with default values
-void te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::fillNNVector(std::vector<te::gm::Point>& report, size_t numberOfNeighbors) const
+void te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::fillNNVector(std::vector<te::gm::PointM>& report, size_t numberOfNeighbors) const
 {
   for (unsigned int i = 0; i < numberOfNeighbors; ++i)
   {
-    te::gm::Point point(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+    te::gm::PointM point(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 0);
     report.push_back(point);
   }
 }
@@ -89,11 +89,11 @@ double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::TeKernelNegExpon
   return intensity * exp(-3.0 * distance);
 }
 
-double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::distWeightAvgNearestNeighbor(const te::gm::Coord2D& coord, size_t numberOfNeighbors, const KernelInterpolationMethod& method)
+double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::distWeightAvgNearestNeighbor(const te::gm::Coord2D& coord, size_t numberOfNeighbors, const te::sa::KernelFunctionType& method)
 {
   te::gm::Point refPoint(coord.getX(), coord.getY());
 
-  std::vector<te::gm::Point> reportItem;
+  std::vector<te::gm::PointM> reportItem;
   std::vector<double> sqrDists;
 
   fillNNVector(reportItem, numberOfNeighbors);
@@ -128,23 +128,23 @@ double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::distWeightAvgNea
       {
         double distance = refPoint.distance(&report[i]->getData()[j]);
 
-        if (method == TeQuarticKernelMethod)
+        if (method == te::sa::Quartic)
         {
           value += TeKernelQuartic(adaptativeRatio, distance, report[i]->getData()[j].getM());
         }
-        else if (method == TeNormalKernelMethod)
+        else if (method == te::sa::Normal)
         {
           value += TeKernelNormal(adaptativeRatio, distance, report[i]->getData()[j].getM());
         }
-        else if (method == TeUniformKernelMethod)
+        else if (method == te::sa::Uniform)
         {
           value += TeKernelUniform(adaptativeRatio, distance, report[i]->getData()[j].getM());
         }
-        else if (method == TeTriangularKernelMethod)
+        else if (method == te::sa::Triangular)
         {
           value += TeKernelTriangular(adaptativeRatio, distance, report[i]->getData()[j].getM());
         }
-        else if (method == TeNegExpKernelMethod)
+        else if (method == te::sa::Negative_Exp)
         {
           value += TeKernelNegExponential(adaptativeRatio, distance, report[i]->getData()[j].getM());
         }
@@ -156,7 +156,7 @@ double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::distWeightAvgNea
 }
 
 //! Distance Weight Average of Elements in Box. If an error occur returns -TeMAXFLOAT
-double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::boxDistWeightAvg(const te::gm::Coord2D& coord, const te::gm::Envelope& box, const KernelInterpolationMethod& method)
+double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::boxDistWeightAvg(const te::gm::Coord2D& coord, const te::gm::Envelope& box, const te::sa::KernelFunctionType& method)
 {
   te::gm::Point refPoint(coord.getX(), coord.getY());
 
@@ -180,23 +180,23 @@ double te::qt::plugins::fiocruz::KernelInterpolationAlgorithms::boxDistWeightAvg
       {
         double distance = refPoint.distance(&report[i]->getData()[j]);
 
-        if (method == TeQuarticKernelMethod)
+        if (method == te::sa::Quartic)
         {
           value += TeKernelQuartic(ratio, distance, report[i]->getData()[j].getM());
         }
-        else if (method == TeNormalKernelMethod)
+        else if (method == te::sa::Normal)
         {
           value += TeKernelNormal(ratio, distance, report[i]->getData()[j].getM());
         }
-        else if (method == TeUniformKernelMethod)
+        else if (method == te::sa::Uniform)
         {
           value += TeKernelUniform(ratio, distance, report[i]->getData()[j].getM());
         }
-        else if (method == TeTriangularKernelMethod)
+        else if (method == te::sa::Triangular)
         {
           value += TeKernelTriangular(ratio, distance, report[i]->getData()[j].getM());
         }
-        else if (method == TeNegExpKernelMethod)
+        else if (method == te::sa::Negative_Exp)
         {
           value += TeKernelNegExponential(ratio, distance, report[i]->getData()[j].getM());
         }

@@ -26,9 +26,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 #ifndef __FIOCRUZ_INTERNAL_REGIONALIZATION_KERNELINTERPOLATIONALGORITMS_H
 #define __FIOCRUZ_INTERNAL_REGIONALIZATION_KERNELINTERPOLATIONALGORITMS_H
 
-#include "terralib/geometry/Coord2D.h"
-#include "terralib/geometry/Point.h"
-#include "terralib/sam/kdtree.h"
+#include <terralib/geometry/Coord2D.h>
+#include <terralib/geometry/PointM.h>
+#include <terralib/sam/kdtree.h>
+
+#include <terralib/sa/Enums.h>
 
 #include <map>
 #include <string>
@@ -49,18 +51,6 @@ namespace te
         */
         enum KernelInterpolationAlgorithm { TeDistWeightAvgInterpolation, TeDistWeightAvgInBoxInterpolation };
 
-        /*! \enum TeKernelInterpolationMethod
-
-        Methods of interpolation, may be:
-        - TeQuarticKernelMethod
-        - TeNormalKernelMethod
-        - TeUniformKernelMethod
-        - TeTriangularKernelMethod
-        - TeNegExpKernelMethod
-        */
-        enum KernelInterpolationMethod { TeQuarticKernelMethod, TeNormalKernelMethod, TeUniformKernelMethod, TeTriangularKernelMethod, TeNegExpKernelMethod };
-
-
         /*!
         \class KernelInterpolationAlgorithms
 
@@ -72,14 +62,14 @@ namespace te
 
         public:
 
-          typedef te::sam::kdtree::AdaptativeNode<te::gm::Coord2D, std::vector<te::gm::Point>, te::gm::Point> KD_ADAPTATIVE_NODE;
+          typedef te::sam::kdtree::AdaptativeNode<te::gm::Coord2D, std::vector<te::gm::PointM>, te::gm::PointM> KD_ADAPTATIVE_NODE;
           typedef te::sam::kdtree::AdaptativeIndex<KD_ADAPTATIVE_NODE> KD_ADAPTATIVE_TREE;
 
           KernelInterpolationAlgorithms(const KD_ADAPTATIVE_TREE& adaptativeTree);
 
           virtual ~KernelInterpolationAlgorithms();
 
-          void fillNNVector(std::vector<te::gm::Point>& report, size_t numberOfNeighbors) const;
+          void fillNNVector(std::vector<te::gm::PointM>& report, size_t numberOfNeighbors) const;
 
           double TeKernelQuartic(double tau, double distance, double intensity);
 
@@ -92,9 +82,9 @@ namespace te
           double TeKernelNegExponential(double tau, double distance, double intensity);
 
           //! Weight Average of Nearest Neighbors. If an error occur returns -TeMAXFLOAT
-          double distWeightAvgNearestNeighbor(const te::gm::Coord2D& coord, size_t numberOfNeighbors, const KernelInterpolationMethod& method);
+          double distWeightAvgNearestNeighbor(const te::gm::Coord2D& coord, size_t numberOfNeighbors, const te::sa::KernelFunctionType& method);
 
-          double boxDistWeightAvg(const te::gm::Coord2D& coord, const te::gm::Envelope& box, const KernelInterpolationMethod& method);
+          double boxDistWeightAvg(const te::gm::Coord2D& coord, const te::gm::Envelope& box, const te::sa::KernelFunctionType& method);
 
         protected:
 

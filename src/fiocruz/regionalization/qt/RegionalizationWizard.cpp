@@ -73,14 +73,17 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::validateCurrentPage()
 
     std::vector<std::string> attrs = m_externalTablePage->getTabularAttributes();
 
-    m_regionalizationRasterPage->setAttrbutes(attrs);
-
     te::gm::Envelope env;
     int srid = 0;
 
     m_externalTablePage->getExtentInfo(env, srid);
 
-    m_regionalizationRasterPage->setExtent(env, srid);
+    if (m_regionalizationType == te::qt::plugins::fiocruz::Raster_Regionalization)
+    {
+      m_regionalizationRasterPage->setAttrbutes(attrs);
+
+      m_regionalizationRasterPage->setExtent(env, srid);
+    }
 
     te::qt::plugins::fiocruz::VecStringPair objects = m_externalTablePage->getUniqueObjects();
 

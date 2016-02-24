@@ -24,26 +24,15 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 // TerraLib
-#include <terralib/common/Globals.h>
 #include <terralib/common/STLUtils.h>
 #include <terralib/dataaccess/utils/Utils.h>
-#include <terralib/geometry/Envelope.h>
 #include <terralib/geometry/GeometryProperty.h>
-#include <terralib/maptools/Grouping.h>
-#include <terralib/maptools/GroupingAlgorithms.h>
 #include <terralib/maptools/GroupingItem.h>
-#include <terralib/maptools/Utils.h>
-#include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
-#include <terralib/raster/BandProperty.h>
-#include <terralib/raster/Grid.h>
-#include <terralib/raster/Raster.h>
-#include <terralib/raster/RasterFactory.h>
-#include <terralib/raster/Utils.h>
-#include <terralib/se/Utils.h>
 
 // Plugin
 #include "../Regionalization.h"
 #include "../RasterInterpolate.h"
+#include "../Utils.h"
 #include "RegionalizationWizard.h"
 
 #include "ExternalTableWizardPage.h"
@@ -205,47 +194,13 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
 
     std::map<std::string, te::map::GroupingItem*> legMap = m_legendPage->getLegendMap();
 
-    for (std::size_t t = 0; t < dpVec.size(); ++t)
+    std::string dsId = outParams->m_oDataSource->getId();
+
+    std::vector<te::map::AbstractLayerPtr> layers = te::qt::plugins::fiocruz::CreateVecDominanceMaps(dsId, dpVec, legMap);
+
+    for (std::size_t t = 0; t < layers.size(); ++t)
     {
-      //create layer
-      te::da::DataSourcePtr ds = te::da::GetDataSource(outParams->m_oDataSource->getId());
-
-      te::qt::widgets::DataSet2Layer converter(ds->getId());
-
-      te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
-
-      te::map::AbstractLayerPtr layer = converter(dt);
-
-      //create legend
-      std::vector<te::map::GroupingItem*> legend;
-
-      std::map<std::string, te::map::GroupingItem*>::iterator it;
-
-      for (it = legMap.begin(); it != legMap.end(); ++it)
-      {
-        te::map::GroupingItem* gi = new te::map::GroupingItem(*it->second);
-
-        legend.push_back(gi);
-      }
-
-      std::string groupingName = dpVec[t].m_propertyName;
-      int attrType = te::dt::STRING_TYPE;
-      int prec = 0;
-      int geomType = te::map::GetGeomType(layer);
-
-      //create grouping
-      te::map::Grouping* group = new te::map::Grouping(groupingName, te::map::UNIQUE_VALUE);
-      group->setPropertyType(attrType);
-      group->setPrecision(prec);
-      group->setStdDeviation(0.);
-      group->setGroupingItems(legend);
-
-      layer->setGrouping(group);
-
-      layer->setTitle(layer->getTitle() + "_" + groupingName);
-
-      //add layer to output layers
-      m_outputLayers.push_back(layer);
+      m_outputLayers.push_back(layers[t]);
     }
 
     te::common::FreeContents(legMap);
@@ -253,94 +208,16 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
     //create layers for each object calculated
     if (m_mapPage->createIndividualMaps())
     {
-      int attrType = te::dt::INT32_TYPE;
-      int prec = 1;
       int slices = m_mapPage->getNSlices();
-      
+
       std::auto_ptr<te::color::ColorBar> cb = m_mapPage->getColorBar();
 
-      //get data
-      te::da::DataSourcePtr ds = te::da::GetDataSource(outParams->m_oDataSource->getId());
+      std::vector<te::map::AbstractLayerPtr> layers = te::qt::plugins::fiocruz::CreateVecIndividualMaps(outParams->m_oDataSource->getId(), outParams->m_propNames, cb, slices);
 
-      std::auto_ptr<te::da::DataSet> dataSet = ds->getDataSet(ds->getDataSetNames()[0]);
-
-      //get info for each object
-      for (std::size_t t = 0; t < outParams->m_propNames.size(); ++t)
+      //add layer to output layers
+      for (std::size_t t = 0; t < layers.size(); ++t)
       {
-        int nullValues = 0;
-        std::vector<int> values;
-
-        dataSet->moveBeforeFirst();
-
-        while (dataSet->moveNext())
-        {
-          if (dataSet->isNull(outParams->m_propNames[t]))
-          {
-            ++nullValues;
-            continue;
-          }
-
-          values.push_back(dataSet->getInt32(outParams->m_propNames[t]));
-        }
-
-        std::vector<te::map::GroupingItem*> legend;
-
-        te::map::GroupingByEqualSteps(values.begin(), values.end(), slices, legend, prec);
-
-        std::vector<te::color::RGBAColor> colorVec = cb->getSlices(legend.size());
-
-        //create layer
-        te::qt::widgets::DataSet2Layer converter(ds->getId());
-
-        te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
-
-        te::map::AbstractLayerPtr layer = converter(dt);
-
-        //create symbolizer
-        int geomType = te::map::GetGeomType(layer);
-
-        for (size_t p = 0; p < colorVec.size(); ++p)
-        {
-          std::vector<te::se::Symbolizer*> symbVec;
-
-          te::se::Symbolizer* s = te::se::CreateSymbolizer((te::gm::GeomType)geomType, colorVec[p].getColor());
-
-          symbVec.push_back(s);
-
-          legend[p]->setSymbolizers(symbVec);
-        }
-
-        //create null grouping item
-        if (nullValues != 0)
-        {
-          te::map::GroupingItem* legendItem = new te::map::GroupingItem;
-          legendItem->setLowerLimit(te::common::Globals::sm_nanStr);
-          legendItem->setUpperLimit(te::common::Globals::sm_nanStr);
-          legendItem->setTitle("No Value");
-          legendItem->setCount(nullValues);
-
-          std::vector<te::se::Symbolizer*> symbVec;
-          te::se::Symbolizer* s = te::se::CreateSymbolizer((te::gm::GeomType)geomType, "#dddddd");
-          symbVec.push_back(s);
-          legendItem->setSymbolizers(symbVec);
-
-          legend.push_back(legendItem);
-        }
-
-        //create grouping
-        te::map::Grouping* group = new te::map::Grouping(outParams->m_propNames[t], te::map::EQUAL_STEPS);
-        group->setPropertyType(attrType);
-        group->setNumSlices(slices);
-        group->setPrecision(prec);
-        group->setStdDeviation(0.);
-        group->setGroupingItems(legend);
-
-        layer->setGrouping(group);
-
-        layer->setTitle(layer->getTitle() + "_" + outParams->m_propNames[t]);
-
-        //add layer to output layers
-        m_outputLayers.push_back(layer);
+        m_outputLayers.push_back(layers[t]);
       }
     }
   }
@@ -348,24 +225,6 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
   return res;
 }
 
-te::rst::Raster* createRaster(const std::string& fileName, te::gm::Envelope* envelope, double resX, double resY, int srid)
-{
-  std::map<std::string, std::string> connInfo;
-  connInfo["URI"] = fileName;
-
-  te::rst::Grid* grid = new te::rst::Grid(resX, resY, envelope, srid);
-  te::rst::BandProperty* bProp = new te::rst::BandProperty(0, te::dt::DOUBLE_TYPE, "");
-  bProp->m_noDataValue = 0.;
-
-  std::vector<te::rst::BandProperty*> vecBandProp;
-  vecBandProp.push_back(bProp);
-
-  te::rst::Raster* raster = te::rst::RasterFactory::make("GDAL", grid, vecBandProp, connInfo);
-
-  te::rst::FillRaster(raster, bProp->m_noDataValue);
-
-  return raster;
-}
 
 bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalization()
 {
@@ -407,11 +266,17 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
   double resY = 0.;
   m_regionalizationRasterPage->getResolution(resX, resY);
 
+  std::vector<std::string> rastersPath;
+
+  std::vector<te::rst::Raster*> rasters;
+
   for (size_t i = 0; i < inParams->m_objects.size(); ++i)
   {
     std::string currentDestiny = inParams->m_objects[i];
 
     std::string fileName = path + "/" + baseName + "_" + currentDestiny + ".tif";
+
+    rastersPath.push_back(fileName);
 
     //read the ocurrencies
     Ocurrencies ocurrencies;
@@ -428,14 +293,48 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
     //criar raster
     te::gm::Envelope* envelope = inParams->m_iVectorDataSet->getExtent(geomColumnPos).release();
 
-    te::rst::Raster* outputRaster = createRaster(fileName, envelope, resX, resY, srid);
+    te::rst::Raster* outputRaster = te::qt::plugins::fiocruz::CreateRaster(fileName, envelope, resX, resY, srid);
 
-    int band = 0; //fixed
-
+    int band = 0;
 
     RasterInterpolate(ocurrencies, outputRaster, band, algorithm, kernelFunction, numberOfNeighbours, boxRatio);
 
-    delete outputRaster;
+    rasters.push_back(outputRaster);
+  }
+
+
+  //create dominances
+
+
+
+  //create individual layers
+  if (m_mapPage->createIndividualMaps())
+  {
+    //create regionalization maps
+    std::vector<std::string> regMaps = te::qt::plugins::fiocruz::CreateIndividualRegionalization(path, baseName, inParams->m_objects, rasters);
+
+    te::common::FreeContents(rasters);
+
+    //create layers and legend
+    std::auto_ptr<te::color::ColorBar> cb = m_mapPage->getColorBar();
+
+    std::vector<te::map::AbstractLayerPtr> layers = te::qt::plugins::fiocruz::CreateRasterIndividualMaps(rastersPath, cb);
+
+    for (std::size_t t = 0; t < layers.size(); ++t)
+    {
+      m_outputLayers.push_back(layers[t]);
+    }
+
+    std::vector<te::map::AbstractLayerPtr> regLayers = te::qt::plugins::fiocruz::CreateRasterIndividualMaps(regMaps, cb);
+
+    for (std::size_t t = 0; t < regLayers.size(); ++t)
+    {
+      m_outputLayers.push_back(regLayers[t]);
+    }
+  }
+  else
+  {
+    te::common::FreeContents(rasters);
   }
 
   return true;

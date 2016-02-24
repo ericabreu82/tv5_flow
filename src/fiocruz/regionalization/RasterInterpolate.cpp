@@ -24,9 +24,10 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 #include "RasterInterpolate.h"
-
 #include "SimpleMemDataSet.h"
+#include "Utils.h"
 
+#include "terralib/common/STLUtils.h"
 #include "terralib/dataaccess/dataset/DataSet.h"
 #include "terralib/dataaccess/dataset/DataSetType.h"
 #include "terralib/dataaccess/utils/Utils.h"
@@ -310,3 +311,64 @@ bool te::qt::plugins::fiocruz::RasterInterpolate(const Ocurrencies& ocurrencies,
   return true;
 }
 
+std::vector<std::string> te::qt::plugins::fiocruz::CreateIndividualRegionalization(std::string path, std::string baseName, std::vector<std::string> objs, std::vector<te::rst::Raster*> rasters)
+{
+  std::vector<std::string> paths;
+
+  std::vector<te::rst::Raster*> outRasters;
+
+  if (rasters.empty())
+    return paths;
+
+  //build output rasters
+  te::rst::Raster* refRaster = rasters[0];
+
+  for (size_t i = 0; i < objs.size(); ++i)
+  {
+    std::string currentDestiny = objs[i];
+
+    std::string fileName = path + "/" + baseName + "_" + currentDestiny + "_reg.tif";
+
+    te::gm::Envelope* env = new te::gm::Envelope(*refRaster->getExtent());
+
+    te::rst::Raster* outputRaster = te::qt::plugins::fiocruz::CreateRaster(fileName, env, refRaster->getGrid()->getResolutionX(), refRaster->getGrid()->getResolutionY(), refRaster->getSRID());
+
+    outRasters.push_back(outputRaster);
+
+    paths.push_back(fileName);
+  }
+
+  //fill output rasters
+  for (unsigned int lin = 0; lin < refRaster->getNumberOfRows(); lin++)
+  {
+    for (unsigned int col = 0; col < refRaster->getNumberOfColumns(); col++)
+    {
+      std::vector<double> vecValues;
+      double val;
+      double total = 0.;
+
+      for (std::size_t vecPos = 0; vecPos < rasters.size(); vecPos++)
+      {
+        rasters[vecPos]->getValue(col, lin, val);
+        vecValues.push_back(val);
+        total += val;
+      }
+
+      for (std::size_t vecPos = 0; vecPos < vecValues.size(); vecPos++)
+      {
+        double value = 0.;
+
+        if (total != 0.)
+        {
+          value = vecValues[vecPos] / total;
+        }
+
+        outRasters[vecPos]->setValue(col, lin, value);
+      }
+    }
+  }
+
+  te::common::FreeContents(outRasters);
+
+  return paths;
+}

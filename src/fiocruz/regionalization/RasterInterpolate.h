@@ -69,6 +69,8 @@ namespace te
           const KernelInterpolationAlgorithm& algorithm,
           const te::sa::KernelFunctionType& method,
           const size_t& numberOfNeighbors, const double& boxRatio);
+
+        std::vector<std::string> CreateIndividualRegionalization(std::string path, std::string baseName, std::vector<std::string> objs, std::vector<te::rst::Raster*> rasters);
       }
     }
   }

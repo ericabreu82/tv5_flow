@@ -62,6 +62,11 @@ void te::qt::plugins::fiocruz::RegionalizationRasterAction::onActionActivated(bo
   if(dlg.exec() == QDialog::Accepted)
   {
     //add new layer
-    //addNewLayer(dlg.getOutputLayer());
+    std::vector<te::map::AbstractLayerPtr> layersVec = dlg.getOutputLayers();
+
+    for (std::size_t t = 0; t < layersVec.size(); ++t)
+    {
+      addNewLayer(layersVec[t]);
+    }
   }
 }

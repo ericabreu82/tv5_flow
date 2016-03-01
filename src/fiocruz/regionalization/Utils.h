@@ -52,7 +52,7 @@ namespace te
 
         std::vector<te::map::AbstractLayerPtr> CreateRasterIndividualMaps(std::vector<std::string> rastersPath, std::auto_ptr<te::color::ColorBar> cb, int slices = 20, int prec = 15);
 
-        std::vector<te::map::AbstractLayerPtr> CreateRasterDominanceMaps(std::vector<std::string> rastersPath, std::map<std::string, te::map::GroupingItem*> legMap);
+        std::vector<te::map::AbstractLayerPtr> CreateRasterDominanceMaps(std::vector<std::string> rastersPath, std::vector<std::pair<std::string, std::string> > legVec);
 
         std::vector<te::map::AbstractLayerPtr> CreateVecDominanceMaps(std::string dsId, std::vector<te::qt::plugins::fiocruz::DominanceParams> dpVec, std::map<std::string, te::map::GroupingItem*> legMap);
 

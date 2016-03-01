@@ -83,6 +83,8 @@ namespace te
 
           std::map<std::string, te::map::GroupingItem*> getLegendMap();
 
+          std::vector<std::pair<std::string, std::string> > getLegendVector();
+
           std::vector<std::string> getObjects();
 
           std::vector<std::string> getObjectsAlias();

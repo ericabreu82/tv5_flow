@@ -311,9 +311,10 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
   if (!domMapsPaths.empty())
   {
     //create layer and legend for each dominance map
+    std::vector<std::pair<std::string, std::string> > legVec = m_legendPage->getLegendVector();
     std::map<std::string, te::map::GroupingItem*> legMap = m_legendPage->getLegendMap();
 
-    std::vector<te::map::AbstractLayerPtr> layers = te::qt::plugins::fiocruz::CreateRasterDominanceMaps(domMapsPaths, legMap);
+    std::vector<te::map::AbstractLayerPtr> layers = te::qt::plugins::fiocruz::CreateRasterDominanceMaps(domMapsPaths, legVec);
 
     for (std::size_t t = 0; t < layers.size(); ++t)
     {

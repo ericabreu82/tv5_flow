@@ -191,7 +191,7 @@ std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::CreateRasterInd
   return layers;
 }
 
-std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::CreateRasterDominanceMaps(std::vector<std::string> rastersPath, std::map<std::string, te::map::GroupingItem*> legMap)
+std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::CreateRasterDominanceMaps(std::vector<std::string> rastersPath, std::vector<std::pair<std::string, std::string> > legVec)
 {
   std::vector<te::map::AbstractLayerPtr> layers;
 
@@ -235,22 +235,17 @@ std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::CreateRasterDom
     //set null value
     te::se::MapItem* m = new te::se::MapItem();
     m->setData(0.);
-    m->setValue(new te::se::ParameterValue("#000000"));
+    m->setValue(new te::se::ParameterValue("#FFFFFF"));
     m->setTitle("No Value");
     r->add(m);
 
-    std::map<std::string, te::map::GroupingItem*>::iterator it;
-
-    int count = 1;
-    for (it = legMap.begin(); it != legMap.end(); ++it)
+    for (std::size_t t = 0; t < legVec.size(); ++t)
     {
       te::se::MapItem* m = new te::se::MapItem();
-      m->setData(count);
-      m->setValue(new te::se::ParameterValue("#000000"));
-      m->setTitle(it->first);
+      m->setData(t + 1);
+      m->setValue(new te::se::ParameterValue(legVec[t].second));
+      m->setTitle(legVec[t].first);
       r->add(m);
-
-      ++count;
     }
 
     te::se::ColorMap* cm = new te::se::ColorMap();

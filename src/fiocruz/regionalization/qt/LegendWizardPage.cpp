@@ -112,6 +112,35 @@ std::map<std::string, te::map::GroupingItem*> te::qt::plugins::fiocruz::LegendWi
   return map;
 }
 
+std::vector<std::pair<std::string, std::string> > te::qt::plugins::fiocruz::LegendWizardPage::getLegendVector()
+{
+  std::vector<std::pair<std::string, std::string> > vec;
+
+
+  std::auto_ptr<te::color::ColorBar> cb(m_colorBar->getColorBar()->getColorBar());
+
+  int legendSize = m_legend.size();
+
+  std::vector<te::color::RGBAColor> colorVec;
+
+  colorVec = cb->getSlices(legendSize);
+
+  if (colorVec.size() == m_legend.size())
+  {
+    for (size_t t = 0; t < colorVec.size(); ++t)
+    {
+      std::string color = colorVec[t].getColor();
+
+      std::string name = m_legend[t]->getTitle();
+
+      std::pair<std::string, std::string> pair(name, color);
+      vec.push_back(pair);
+    }
+  }
+
+  return vec;
+}
+
 void te::qt::plugins::fiocruz::LegendWizardPage::onApplyPushButtonReleased()
 {
   std::vector<std::string> objects = getObjects();

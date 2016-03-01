@@ -27,6 +27,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #define __FIOCRUZ_INTERNAL_REGIONALIZATION_RASTERINTERPOLATE_H
 
 #include "KernelInterpolationAlgorithms.h"
+#include "Regionalization.h"
 
 #include <string>
 
@@ -69,6 +70,8 @@ namespace te
           const KernelInterpolationAlgorithm& algorithm,
           const te::sa::KernelFunctionType& method,
           const size_t& numberOfNeighbors, const double& boxRatio);
+
+        std::vector<std::string> CreateDominancesMaps(std::string path, std::string baseName, std::vector<te::rst::Raster*> rasters, std::vector<te::qt::plugins::fiocruz::DominanceParams> dpVec);
 
         std::vector<std::string> CreateIndividualRegionalization(std::string path, std::string baseName, std::vector<std::string> objs, std::vector<te::rst::Raster*> rasters);
       }

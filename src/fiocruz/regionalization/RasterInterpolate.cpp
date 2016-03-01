@@ -311,6 +311,112 @@ bool te::qt::plugins::fiocruz::RasterInterpolate(const Ocurrencies& ocurrencies,
   return true;
 }
 
+std::vector<std::string> te::qt::plugins::fiocruz::CreateDominancesMaps(std::string path, std::string baseName, std::vector<te::rst::Raster*> rasters, std::vector<te::qt::plugins::fiocruz::DominanceParams> dpVec)
+{
+  std::vector<std::string> paths;
+
+  std::vector<te::rst::Raster*> outRasters;
+
+  if (rasters.empty())
+    return paths;
+
+  //build output rasters
+  te::rst::Raster* refRaster = rasters[0];
+
+  for (size_t i = 0; i < dpVec.size(); ++i)
+  {
+    std::string domTitle = dpVec[i].m_propertyName;
+
+    std::string fileName = path + "/" + baseName + "_" + domTitle + ".tif";
+
+    te::gm::Envelope* env = new te::gm::Envelope(*refRaster->getExtent());
+
+    te::rst::Raster* outputRaster = te::qt::plugins::fiocruz::CreateRaster(fileName, env, refRaster->getGrid()->getResolutionX(), refRaster->getGrid()->getResolutionY(), refRaster->getSRID(), te::dt::UCHAR_TYPE);
+
+    outRasters.push_back(outputRaster);
+
+    paths.push_back(fileName);
+  }
+
+  //calculate dominances
+  for (size_t i = 0; i < dpVec.size(); ++i)
+  {
+    double levMin = (double)dpVec[i].m_minLevel / 100.;
+    double levMax = (double)dpVec[i].m_maxLevel / 100.;
+
+    for (int lin = 0; lin < refRaster->getNumberOfRows(); lin++)
+    {
+      for (int col = 0; col < refRaster->getNumberOfColumns(); col++)
+      {
+        std::vector<double> vecValues;
+        double val;
+        double total = 0.;
+
+        for (std::size_t vecPos = 0; vecPos < rasters.size(); vecPos++)
+        {
+          rasters[vecPos]->getValue(col, lin, val);
+          vecValues.push_back(val);
+          total += val;
+        }
+
+        if (total == 0.)
+        {
+          outRasters[i]->setValue(col, lin, 0);
+          continue;
+        }
+
+        //generate individual kernel maps -> each raster / total
+        std::vector<double>::iterator itValues = vecValues.begin();
+        int count = 0;
+        bool check = false;
+        double secundary = 0.;
+
+        while (itValues != vecValues.end())
+        {
+          double result = *itValues / total;
+
+          //evitar a interseccao entre os mapas de mercado
+          if (result > levMax)
+          {
+            check = false;
+            break;
+          }
+
+          if (result > levMin && result <= levMax && result > secundary)
+          {
+            secundary = result;
+
+            outRasters[i]->setValue(col, lin, count + 1);
+
+            check = true;
+          }
+
+          if (result == levMax && levMax == 1)
+          {
+            secundary = result;
+
+            outRasters[i]->setValue(col, lin, count + 1);
+
+            check = true;
+          }
+
+          ++itValues;
+          ++count;
+        }
+
+        if (!check)
+        {
+          outRasters[i]->setValue(col, lin, 0);
+        }
+      }
+    }
+  }
+
+  te::common::FreeContents(outRasters);
+
+  return paths;
+}
+
 std::vector<std::string> te::qt::plugins::fiocruz::CreateIndividualRegionalization(std::string path, std::string baseName, std::vector<std::string> objs, std::vector<te::rst::Raster*> rasters)
 {
   std::vector<std::string> paths;

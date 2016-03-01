@@ -48,8 +48,10 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/se/Enums.h>
 #include <terralib/se/Interpolate.h>
 #include <terralib/se/InterpolationPoint.h>
+#include <terralib/se/MapItem.h>
 #include <terralib/se/ParameterValue.h>
 #include <terralib/se/RasterSymbolizer.h>
+#include <terralib/se/Recode.h>
 #include <terralib/se/Utils.h>
 
 // Qt
@@ -61,13 +63,13 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-te::rst::Raster* te::qt::plugins::fiocruz::CreateRaster(const std::string& fileName, te::gm::Envelope* envelope, double resX, double resY, int srid)
+te::rst::Raster* te::qt::plugins::fiocruz::CreateRaster(const std::string& fileName, te::gm::Envelope* envelope, double resX, double resY, int srid, int type)
 {
   std::map<std::string, std::string> connInfo;
   connInfo["URI"] = fileName;
 
   te::rst::Grid* grid = new te::rst::Grid(resX, resY, envelope, srid);
-  te::rst::BandProperty* bProp = new te::rst::BandProperty(0, te::dt::DOUBLE_TYPE, "");
+  te::rst::BandProperty* bProp = new te::rst::BandProperty(0, type, "");
   bProp->m_noDataValue = 0.;
 
   std::vector<te::rst::BandProperty*> vecBandProp;
@@ -179,6 +181,80 @@ std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::CreateRasterInd
 
     te::se::ColorMap* cm = new te::se::ColorMap();
     cm->setInterpolate(interpolate);
+
+    te::se::RasterSymbolizer* rasterSymb = te::se::GetRasterSymbolizer(layer->getStyle());
+    rasterSymb->setColorMap(cm);
+
+    layers.push_back(layer);
+  }
+
+  return layers;
+}
+
+std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::CreateRasterDominanceMaps(std::vector<std::string> rastersPath, std::map<std::string, te::map::GroupingItem*> legMap)
+{
+  std::vector<te::map::AbstractLayerPtr> layers;
+
+  for (std::size_t t = 0; t < rastersPath.size(); ++t)
+  {
+    //create data source
+    boost::filesystem::path uri(rastersPath[t]);
+
+    std::map<std::string, std::string> dsInfo;
+    dsInfo["URI"] = uri.string();
+
+    boost::uuids::basic_random_generator<boost::mt19937> gen;
+    boost::uuids::uuid u = gen();
+    std::string id_ds = boost::uuids::to_string(u);
+
+    te::da::DataSourceInfoPtr dsInfoPtr(new te::da::DataSourceInfo);
+    dsInfoPtr->setConnInfo(dsInfo);
+    dsInfoPtr->setTitle(uri.stem().string());
+    dsInfoPtr->setAccessDriver("GDAL");
+    dsInfoPtr->setType("GDAL");
+    dsInfoPtr->setDescription(uri.string());
+    dsInfoPtr->setId(id_ds);
+
+    te::da::DataSourceInfoManager::getInstance().add(dsInfoPtr);
+
+    te::da::DataSourcePtr ds = te::da::DataSourceManager::getInstance().get(id_ds, "GDAL", dsInfoPtr->getConnInfo());
+
+    //create layer
+    te::qt::widgets::DataSet2Layer converter(ds->getId());
+
+    te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
+
+    te::map::AbstractLayerPtr layer = converter(dt);
+
+    //create legend
+    te::se::Recode* r = new te::se::Recode();
+
+    r->setFallbackValue("#000000");
+    r->setLookupValue(new te::se::ParameterValue("Rasterdata"));
+
+    //set null value
+    te::se::MapItem* m = new te::se::MapItem();
+    m->setData(0.);
+    m->setValue(new te::se::ParameterValue("#000000"));
+    m->setTitle("No Value");
+    r->add(m);
+
+    std::map<std::string, te::map::GroupingItem*>::iterator it;
+
+    int count = 1;
+    for (it = legMap.begin(); it != legMap.end(); ++it)
+    {
+      te::se::MapItem* m = new te::se::MapItem();
+      m->setData(count);
+      m->setValue(new te::se::ParameterValue("#000000"));
+      m->setTitle(it->first);
+      r->add(m);
+
+      ++count;
+    }
+
+    te::se::ColorMap* cm = new te::se::ColorMap();
+    cm->setRecode(r);
 
     te::se::RasterSymbolizer* rasterSymb = te::se::GetRasterSymbolizer(layer->getStyle());
     rasterSymb->setColorMap(cm);

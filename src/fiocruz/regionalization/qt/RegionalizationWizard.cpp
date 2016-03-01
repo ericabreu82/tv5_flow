@@ -304,7 +304,22 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
 
 
   //create dominances
+  std::vector<te::qt::plugins::fiocruz::DominanceParams> dpVec = m_mapPage->getDominances();
 
+  std::vector<std::string> domMapsPaths = te::qt::plugins::fiocruz::CreateDominancesMaps(path, baseName, rasters, dpVec);
+
+  if (!domMapsPaths.empty())
+  {
+    //create layer and legend for each dominance map
+    std::map<std::string, te::map::GroupingItem*> legMap = m_legendPage->getLegendMap();
+
+    std::vector<te::map::AbstractLayerPtr> layers = te::qt::plugins::fiocruz::CreateRasterDominanceMaps(domMapsPaths, legMap);
+
+    for (std::size_t t = 0; t < layers.size(); ++t)
+    {
+      m_outputLayers.push_back(layers[t]);
+    }
+  }
 
 
   //create individual layers

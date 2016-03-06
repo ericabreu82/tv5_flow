@@ -26,13 +26,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 // TerraLib
 #include <terralib/common/STLUtils.h>
 #include <terralib/dataaccess/utils/Utils.h>
-#include <terralib/geometry/GeometryProperty.h>
 #include <terralib/maptools/GroupingItem.h>
 
 // Plugin
-#include "../Regionalization.h"
-#include "../RasterInterpolate.h"
 #include "../Utils.h"
+#include "../RasterRegionalization.h"
 #include "RegionalizationWizard.h"
 
 #include "ExternalTableWizardPage.h"
@@ -40,7 +38,6 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "MapWizardPage.h"
 #include "RegionalizationRasterWizardPage.h"
 #include "RegionalizationVectorWizardPage.h"
-#include "../SimpleMemDataSet.h"
 
 // Qt Includes
 #include <QMessageBox>
@@ -152,8 +149,6 @@ void te::qt::plugins::fiocruz::RegionalizationWizard::addPages()
 
 bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalization()
 {
-  te::qt::plugins::fiocruz::Regionalization reg;
-
   RegionalizationInputParams* inParams = m_externalTablePage->getRegionalizationInputParameters();
 
   inParams->m_vecDominance = m_mapPage->getDominances();
@@ -161,6 +156,7 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeVectorRegionalizati
 
   RegionalizationOutputParams* outParams = m_regionalizationVectorPage->getRegionalizationOutputParameters();
 
+  te::qt::plugins::fiocruz::Regionalization reg;
   reg.setInputParameters(inParams);
   reg.setOutputParameters(outParams);
 
@@ -233,73 +229,48 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
   inParams->m_vecDominance = m_mapPage->getDominances();
   inParams->m_objects = m_legendPage->getObjects();
 
-  //for vector data
-  te::da::DataSetPtr vecDataSet = inParams->m_iVectorDataSet;
-  std::string vecColumnOriginId = inParams->m_iVectorColumnOriginId;
-  std::auto_ptr<te::da::DataSetType> vecDataSetType = inParams->m_iVectorDataSource->getDataSetType(inParams->m_iVectorDataSetName);
-  std::size_t geomColumnPos = te::da::GetFirstPropertyPos(vecDataSet.get(), te::dt::GEOMETRY_TYPE);
-  te::gm::GeometryProperty* geomProperty = te::da::GetFirstGeomProperty(vecDataSetType.get());
-  int srid = geomProperty->getSRID();
+  //raster input parameters
+  inParams->m_hasSpatialInformation = m_regionalizationRasterPage->hasSpatialInformation();
+  inParams->m_kernelFunction = m_regionalizationRasterPage->getKernelFunctionType();
+  inParams->m_algorithm = m_regionalizationRasterPage->getKernelInterpolationAlgorithm();
+  inParams->m_numberOfNeighbours = m_regionalizationRasterPage->getNumberOfNeighbours();
+  inParams->m_boxRatio = m_regionalizationRasterPage->getRadius();
+  m_regionalizationRasterPage->getSpatialAttributesNames(inParams->m_xAttrName, inParams->m_yAttrName);
+  m_regionalizationRasterPage->getResolution(inParams->m_resX, inParams->m_resY);
 
   std::string path = m_regionalizationRasterPage->getPath();
   std::string baseName = m_regionalizationRasterPage->getBaseName();
 
-  ComplexDataSet vecDataDriver(vecDataSet.get(), vecDataSetType.get());
+  RasterRegionalizationOutputParams* outParams = new RasterRegionalizationOutputParams();
+  outParams->m_path = path;
+  outParams->m_baseName = baseName;
 
-  //for tabular data
-  te::da::DataSetPtr tabDataSet = inParams->m_iTabularDataSet;
-  std::string tabColumnOriginId = inParams->m_iTabularColumnOriginId;
-  std::string tabColumnDestinyId = inParams->m_iTabularColumnDestinyId;
-  std::auto_ptr<te::da::DataSetType> tabDataSetType = inParams->m_iTabularDataSource->getDataSetType(inParams->m_iTabularDataSetName);
-  ComplexDataSet tabDataDriver(tabDataSet.get(), tabDataSetType.get());
+  te::qt::plugins::fiocruz::RasterRegionalization reg;
+  reg.setInputParameters(inParams);
+  reg.setOutputParameters(outParams);
 
-  bool hasSpatialInformation = m_regionalizationRasterPage->hasSpatialInformation();
-  te::sa::KernelFunctionType kernelFunction = m_regionalizationRasterPage->getKernelFunctionType();
-  size_t numberOfNeighbours = m_regionalizationRasterPage->getNumberOfNeighbours();
-  double boxRatio = m_regionalizationRasterPage->getRadius();
-
-  std::string xAttrName;
-  std::string yAttrName;
-  m_regionalizationRasterPage->getSpatialAttributesNames(xAttrName, yAttrName);
-
-  double resX = 0.;
-  double resY = 0.;
-  m_regionalizationRasterPage->getResolution(resX, resY);
-
+  bool res = false;
   std::vector<std::string> rastersPath;
-
   std::vector<te::rst::Raster*> rasters;
 
-  for (size_t i = 0; i < inParams->m_objects.size(); ++i)
+  try
   {
-    std::string currentDestiny = inParams->m_objects[i];
-
-    std::string fileName = path + "/" + baseName + "_" + currentDestiny + ".tif";
-
-    rastersPath.push_back(fileName);
-
-    //read the ocurrencies
-    Ocurrencies ocurrencies;
-    if (hasSpatialInformation == true)
-    {
-      ocurrencies = GetOcurrencies(tabDataDriver, tabColumnOriginId, xAttrName, yAttrName, currentDestiny);
-    }
-    else
-    {
-      ocurrencies = GetOcurrencies(tabDataDriver, tabColumnDestinyId, tabColumnOriginId, vecDataDriver, vecColumnOriginId, currentDestiny);
-    }
-    KernelInterpolationAlgorithm algorithm = m_regionalizationRasterPage->getKernelInterpolationAlgorithm();
-
-    //criar raster
-    te::gm::Envelope* envelope = inParams->m_iVectorDataSet->getExtent(geomColumnPos).release();
-
-    te::rst::Raster* outputRaster = te::qt::plugins::fiocruz::CreateRaster(fileName, envelope, resX, resY, srid);
-
-    int band = 0;
-
-    RasterInterpolate(ocurrencies, outputRaster, band, algorithm, kernelFunction, numberOfNeighbours, boxRatio);
-
-    rasters.push_back(outputRaster);
+    res = reg.generate(rastersPath, rasters);
+  }
+  catch (const te::common::Exception& e)
+  {
+    QMessageBox::warning(this, tr("Raster Regionalization"), e.what());
+    return false;
+  }
+  catch (const std::exception& e)
+  {
+    QMessageBox::warning(this, tr("Raster Regionalization"), e.what());
+    return false;
+  }
+  catch (...)
+  {
+    QMessageBox::warning(this, tr("Raster Regionalization"), tr("Internal Error."));
+    return false;
   }
 
 

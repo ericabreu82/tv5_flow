@@ -30,6 +30,8 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "terralib/dataaccess/dataset/DataSet.h"
 #include "terralib/dataaccess/dataset/DataSetAdapter.h"
 #include "terralib/dataaccess/datasource/DataSource.h"
+#include "terralib/sa/Enums.h"
+#include "KernelInterpolationAlgorithms.h"
 #include "RegionalizationMap.h"
 
 #include <map>
@@ -82,16 +84,16 @@ namespace te
           public:
 
             RegionalizationInputParams()
+              : m_hasSpatialInformation(false)
+              , m_kernelFunction(te::sa::KernelFunctionType::Normal)
+              , m_numberOfNeighbours(0)
+              , m_boxRatio(0.)
+              , m_resX(0.)
+              , m_resY(0.)
             {
-              m_iVectorDataSetName = "";
-              m_iVectorColumnOriginId = "";
-              m_iTabularDataSetName = "";
-              m_iTabularColumnOriginId = "";
-              m_iTabularColumnDestinyId = "";
-              m_iTabularColumnDestinyAlias = "";
             }
 
-            ~RegionalizationInputParams()
+            virtual ~RegionalizationInputParams()
             {
 
             }
@@ -120,6 +122,18 @@ namespace te
             //objects
             std::vector<std::string> m_objects;
 
+            //raster params
+            bool m_hasSpatialInformation;
+            te::sa::KernelFunctionType m_kernelFunction;
+            KernelInterpolationAlgorithm m_algorithm;
+            size_t m_numberOfNeighbours;
+            double m_boxRatio;
+
+            std::string m_xAttrName;
+            std::string m_yAttrName;
+
+            double m_resX;
+            double m_resY;
         };
 
         class RegionalizationOutputParams
@@ -128,13 +142,10 @@ namespace te
 
             RegionalizationOutputParams()
             {
-              m_oDataSetName = "";
-              m_oVectorColumnOriginId = "";
             }
 
-            ~RegionalizationOutputParams()
+            virtual ~RegionalizationOutputParams()
             {
-
             }
 
           public:
@@ -163,11 +174,11 @@ namespace te
 
             virtual ~Regionalization();
 
-            bool generate();
-
             void setInputParameters(RegionalizationInputParams* inParams);
 
             void setOutputParameters(RegionalizationOutputParams* outParams);
+
+            bool generate();
 
             bool getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& idColumnName, const std::string& aliasColumnName, VecStringPair& vecIds);
 

@@ -18,9 +18,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 /*!
-\file fiocruz/src/fiocruz/AbstractAction.cpp
+\file fiocruz/src/fiocruz/Regionalization.cpp
 
-\brief This file defines the abstract class AbstractAction
+\brief This file defines the algorithm for vector regionalization
 */
 
 #include "Regionalization.h"
@@ -59,6 +59,16 @@ te::qt::plugins::fiocruz::Regionalization::Regionalization()
 te::qt::plugins::fiocruz::Regionalization::~Regionalization()
 {
 
+}
+
+void te::qt::plugins::fiocruz::Regionalization::setInputParameters(RegionalizationInputParams* inParams)
+{
+  m_inputParams.reset(inParams);
+}
+
+void te::qt::plugins::fiocruz::Regionalization::setOutputParameters(RegionalizationOutputParams* outParams)
+{
+  m_outputParams.reset(outParams);
 }
 
 bool te::qt::plugins::fiocruz::Regionalization::generate()
@@ -148,16 +158,6 @@ bool te::qt::plugins::fiocruz::Regionalization::generate()
   delete simpleDataSet;
 
   return true;
-}
-
-void te::qt::plugins::fiocruz::Regionalization::setInputParameters(RegionalizationInputParams* inParams)
-{
-  m_inputParams.reset(inParams);
-}
-
-void te::qt::plugins::fiocruz::Regionalization::setOutputParameters(RegionalizationOutputParams* outParams)
-{
-  m_outputParams.reset(outParams);
 }
 
 bool te::qt::plugins::fiocruz::Regionalization::getDistinctObjects(te::da::DataSourcePtr dataSource, const std::string& dataSetName, const std::string& idColumnName, const std::string& aliasColumnName, VecStringPair& vecIds)

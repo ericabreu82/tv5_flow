@@ -312,6 +312,8 @@ bool te::qt::plugins::fiocruz::RegionalizationWizard::executeRasterRegionalizati
       m_outputLayers.push_back(layers[t]);
     }
 
+    cb = m_mapPage->getColorBar();
+
     std::vector<te::map::AbstractLayerPtr> regLayers = te::qt::plugins::fiocruz::CreateRasterIndividualMaps(regMaps, cb);
 
     for (std::size_t t = 0; t < regLayers.size(); ++t)

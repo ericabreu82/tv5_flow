@@ -65,6 +65,10 @@ namespace te
 
           void setLayerList(std::list<te::map::AbstractLayerPtr> list);
 
+        public slots:
+
+          void onOkPushButtonClicked();
+
         private:
 
           std::auto_ptr<Ui::FlowDiagramDialogForm> m_ui;

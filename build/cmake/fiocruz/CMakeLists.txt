@@ -87,7 +87,7 @@ set(FIOCRUZ_FILES ${FIOCRUZ_SRC_FILES}
 				   
 add_library(fiocruz SHARED ${FIOCRUZ_FILES})
 
-target_link_libraries(fiocruz terralib_mod_plugin terralib_mod_qt_apf)
+target_link_libraries(fiocruz terralib_mod_plugin terralib_mod_qt_apf terralib_mod_graph)
 
 qt5_use_modules(fiocruz Widgets)
 

@@ -80,7 +80,7 @@ namespace te
 
           \param spatialDs            Data Source wiht vectorial data
           \param spatialDataSetName   Data set name wiht vectorial data
-          \param linkColumn           Column name from vectorial data used as link column
+          \param linkColumnIdx        Column index from vectorial data used as link column
           \param srid                 Vectorial projection id
           \param tabularDs            Data Source wiht tabular data
           \param tabularDataSetName   Data set name wiht tabular data
@@ -94,7 +94,7 @@ namespace te
           \return True if the graph was correctly generated and false in other case.
 
           */
-          bool build(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const std::string& linkColumn, const int& srid, 
+          bool build(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const int& linkColumnIdx, const int& srid, 
             te::da::DataSourcePtr tabularDs, const std::string& tabularDataSetName, const int& fromIdx, const int& toIdx, const int& weightIdx,
             const std::map<std::string, std::string>& dsInfo, const std::string& graphType, const std::map<std::string, std::string>& gInfo);
 
@@ -119,13 +119,13 @@ namespace te
 
           \param spatialDs            Data Source wiht vectorial data
           \param spatialDataSetName   Data set name wiht vectorial data
-          \param linkColumn           Column name from vectorial data used as link column
+          \param linkColumnIdx        Column index from vectorial data used as link column
           \param srid                 Vectorial projection id
 
           \return True if the vertexs was created correctly and false in othe case
 
           */
-          bool createVertexObjects(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const std::string& linkColumn, const int& srid);
+          bool createVertexObjects(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const int& linkColumnIdx, const int& srid);
 
           /*!
           \brief Function used to create all edges object based on flow table data

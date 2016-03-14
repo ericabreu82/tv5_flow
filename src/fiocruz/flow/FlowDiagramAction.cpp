@@ -63,6 +63,6 @@ void te::qt::plugins::fiocruz::FlowDiagramAction::onActionActivated(bool checked
   if(dlg.exec() == QDialog::Accepted)
   {
     //add new layer
-    //addNewLayer(dlg.getOutputLayer());
+    addNewLayer(dlg.getOutputLayer());
   }
 }

@@ -66,6 +66,8 @@ namespace te
 
           void setLayerList(std::list<te::map::AbstractLayerPtr> list);
 
+          te::map::AbstractLayerPtr getOutputLayer();
+
         public slots:
 
           void onSpatialLayerComboBoxActivated(int index);
@@ -83,6 +85,8 @@ namespace te
           std::auto_ptr<Ui::FlowDiagramDialogForm> m_ui;
 
           te::da::DataSourceInfoPtr m_outputDatasource;
+
+          te::map::AbstractLayerPtr m_outputLayer;
 
         };
       }   // end namespace fiocruz

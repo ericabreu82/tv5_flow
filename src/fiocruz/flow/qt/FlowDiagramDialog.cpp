@@ -29,7 +29,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/dataaccess/datasource/DataSourceFactory.h>
 #include <terralib/dataaccess/datasource/DataSourceInfoManager.h>
 #include <terralib/dataaccess/datasource/DataSourceManager.h>
+#include <terralib/dataaccess/utils/Utils.h>
 #include <terralib/qt/widgets/datasource/selector/DataSourceSelectorDialog.h>
+#include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
 #include <terralib/graph/Globals.h>
 
 #include "../FlowGraphDiagramBuilder.h"
@@ -101,25 +103,42 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::setLayerList(std::list<te::map
     onTabularLayerComboBoxActivated(0);
 }
 
+te::map::AbstractLayerPtr te::qt::plugins::fiocruz::FlowDiagramDialog::getOutputLayer()
+{
+  return m_outputLayer;
+}
+
 void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
 {
-  std::string shapeFileName = "D:/Workspace/FIOCRUZ/data/flow/Censo_2000_Municipios.shp";
-  std::string linkColumn = "cod_munic";
-  std::string csvFileName = "D:/Workspace/FIOCRUZ/data/flow/c50mun_rec.csv";
-  int fromIdx = 0;
-  int toIdx = 1;
-  int weightIdx = 2;
+  //get input spatial info
+  QVariant spatialVarLayer = m_ui->m_spatialLayerComboBox->currentData(Qt::UserRole);
+  te::map::AbstractLayerPtr spatialLayer = spatialVarLayer.value<te::map::AbstractLayerPtr>();
+  std::auto_ptr<te::da::DataSetType> spatialDsType = spatialLayer->getSchema();
+  te::da::DataSourcePtr spatialDs = te::da::GetDataSource(spatialLayer->getDataSourceId());
+  std::string spatialDataSetName = spatialDsType->getName();
 
-  //std::string shapeFileName = "D:/WS/dados/flow/reg.txt_pol.shp";
-  //std::string linkColumn = "object_id_";
-  //std::string csvFileName = "D:/WS/dados/flow/T_INT_97.csv";
-  //int fromIdx = 1;
-  //int toIdx = 3;
-  //int weightIDx = 5;
+  int linkColumnIdx = m_ui->m_spatialPropertyComboBox->currentData().toInt();
+  int srid = spatialLayer->getSRID();
 
-  int srid = 4618;
+  //get get input tabular info
+  QVariant tabularVarLayer = m_ui->m_tabularLayerComboBox->currentData(Qt::UserRole);
+  te::map::AbstractLayerPtr tabularLayer = tabularVarLayer.value<te::map::AbstractLayerPtr>();
+  std::auto_ptr<te::da::DataSetType> tabularDsType = tabularLayer->getSchema();
+  te::da::DataSourcePtr tabularDs = te::da::GetDataSource(tabularLayer->getDataSourceId());
+  std::string tabularDataSetName = tabularDsType->getName();
 
-  std::string graphName = "flowMuG";
+  int fromIdx = m_ui->m_tabularOriginComboBox->currentData().toInt();
+  int toIdx = m_ui->m_tabularDestinyComboBox->currentData().toInt();;
+  int weightIdx = m_ui->m_tabularWeightComboBox->currentData().toInt();;
+
+  
+  //output info
+  std::string dataSetName = m_ui->m_newLayerNameLineEdit->text().toStdString();
+  std::size_t idx = dataSetName.find(".");
+  if (idx != std::string::npos)
+    dataSetName = dataSetName.substr(0, idx);
+
+  std::string graphName = dataSetName;
 
   // data source information
   std::map<std::string, std::string> connInfo;
@@ -151,53 +170,54 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
   {
     te::qt::plugins::fiocruz::FlowGraphDiagramBuilder builder;
 
-    //if (!builder.build(shapeFileName, linkColumn, srid, csvFileName, fromIdx, toIdx, weightIdx, connInfo, graphType, graphInfo))
-    //{
-    //  //std::cout << std::endl << "An exception has occuried in Graph Example: " << builder->getErrorMessage() << std::endl;
-    //}
+    if (!builder.build(spatialDs, spatialDataSetName, linkColumnIdx, srid, tabularDs, tabularDataSetName, fromIdx, toIdx, weightIdx, connInfo, graphType, graphInfo))
+    {
+      QMessageBox::warning(this, tr("Warning"), builder.getErrorMessage().c_str());
+    }
 
     graph = builder.getGraph();
   }
   catch (const std::exception& e)
   {
-    //std::cout << std::endl << "An exception has occuried in Graph Example: " << e.what() << std::endl;
+    QMessageBox::warning(this, tr("Warning"), e.what());
   }
   catch (...)
   {
-    //std::cout << std::endl << "An unexpected exception has occuried in Graph Example!" << std::endl;
+    QMessageBox::warning(this, tr("Warning"), tr("Internal Error"));
   }
 
-  //export graph to shape
-  std::map<std::string, std::string> connInfoOut;
-  connInfoOut["URI"] = "d:/teste.shp";
-
-  std::auto_ptr<te::da::DataSource> ds = te::da::DataSourceFactory::make("OGR");
-  ds->setConnectionInfo(connInfoOut);
-  ds->open();
-
-  std::string dataSetName = "teste";
-
   //export
+  te::da::DataSourcePtr outputDataSource = te::da::DataSourceManager::getInstance().get(m_outputDatasource->getId(), m_outputDatasource->getType(), m_outputDatasource->getConnInfo());
+
   te::qt::plugins::fiocruz::FlowGraphExport fge;
 
   try
   {
-    te::da::DataSourcePtr dsPtr(ds.get());
-
-    fge.exportGraph(dsPtr, dataSetName, graph.get());
+    fge.exportGraph(outputDataSource, dataSetName, graph.get());
   }
   catch (const std::exception& e)
   {
-    
+    QMessageBox::warning(this, tr("Warning"), e.what());
   }
   catch (...)
   {
-    
+    QMessageBox::warning(this, tr("Warning"), tr("Internal Error"));
   }
 
-  ds->close();
+  outputDataSource->close();
 
   graph->flush();
+
+  //create layer
+  te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasource->getId());
+
+  te::qt::widgets::DataSet2Layer converter(m_outputDatasource->getId());
+
+  te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
+
+  m_outputLayer = converter(dt);
+
+  accept();
 }
 
 void te::qt::plugins::fiocruz::FlowDiagramDialog::onSpatialLayerComboBoxActivated(int index)
@@ -216,7 +236,7 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onSpatialLayerComboBoxActivate
     te::dt::Property* prop = dsType->getProperties()[t];
 
     if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::INT64_TYPE || prop->getType() == te::dt::STRING_TYPE)
-      m_ui->m_spatialPropertyComboBox->addItem(dsType->getProperties()[t]->getName().c_str());
+      m_ui->m_spatialPropertyComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
   }
 }
 
@@ -228,6 +248,7 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onTabularLayerComboBoxActivate
 
   m_ui->m_tabularOriginComboBox->clear();
   m_ui->m_tabularDestinyComboBox->clear();
+  m_ui->m_tabularWeightComboBox->clear();
 
   //set properties from tabular layer into combos
   std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
@@ -238,8 +259,9 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onTabularLayerComboBoxActivate
 
     if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::STRING_TYPE)
     {
-      m_ui->m_tabularOriginComboBox->addItem(dsType->getProperties()[t]->getName().c_str());
-      m_ui->m_tabularDestinyComboBox->addItem(dsType->getProperties()[t]->getName().c_str());
+      m_ui->m_tabularOriginComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+      m_ui->m_tabularDestinyComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+      m_ui->m_tabularWeightComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
     }
   }
 }

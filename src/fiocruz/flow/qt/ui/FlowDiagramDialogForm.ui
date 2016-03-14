@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>526</width>
-    <height>460</height>
+    <height>486</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -219,6 +219,19 @@
                  </property>
                 </widget>
                </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>Weight Property:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QComboBox" name="m_tabularWeightComboBox"/>
+               </item>
               </layout>
              </item>
             </layout>
@@ -385,6 +398,7 @@
   <tabstop>m_tabularLayerComboBox</tabstop>
   <tabstop>m_tabularOriginComboBox</tabstop>
   <tabstop>m_tabularDestinyComboBox</tabstop>
+  <tabstop>m_tabularWeightComboBox</tabstop>
   <tabstop>m_repositoryLineEdit</tabstop>
   <tabstop>m_targetFileToolButton</tabstop>
   <tabstop>m_targetDatasourceToolButton</tabstop>

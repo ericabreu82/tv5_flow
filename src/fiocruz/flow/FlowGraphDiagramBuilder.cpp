@@ -33,6 +33,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/geometry/Polygon.h>
 #include <terralib/graph/core/AbstractGraphFactory.h>
 #include <terralib/graph/core/Edge.h>
+#include <terralib/graph/core/GraphMetadata.h>
 #include <terralib/graph/core/Vertex.h>
 
 
@@ -50,7 +51,7 @@ te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::~FlowGraphDiagramBuilder()
 
 }
 
-bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::build(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const std::string& linkColumn, const int& srid,
+bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::build(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const int& linkColumnIdx, const int& srid,
   te::da::DataSourcePtr tabularDs, const std::string& tabularDataSetName, const int& fromIdx, const int& toIdx, const int& weightIdx,
   const std::map<std::string, std::string>& dsInfo, const std::string& graphType, const std::map<std::string, std::string>& gInfo)
 {
@@ -59,7 +60,9 @@ bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::build(te::da::DataSource
 
   assert(m_graph);
 
-  if (createVertexObjects(spatialDs, spatialDataSetName, linkColumn, srid) == false)
+  m_graph->getMetadata()->setSRID(srid);
+
+  if (createVertexObjects(spatialDs, spatialDataSetName, linkColumnIdx, srid) == false)
   {
     return false;
   }
@@ -91,7 +94,7 @@ int  te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::getEdgeId()
   return id;
 }
 
-bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createVertexObjects(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const std::string& linkColumn, const int& srid)
+bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createVertexObjects(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const int& linkColumnIdx, const int& srid)
 {
   //get data set
   std::auto_ptr<te::da::DataSet> dataSet = spatialDs->getDataSet(spatialDataSetName);
@@ -145,7 +148,7 @@ bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createVertexObjects(te::
   //create vertex objects
   while (dataSet->moveNext())
   {
-    int id = dataSet->getInt32(linkColumn);
+    int id = dataSet->getInt32(linkColumnIdx);
 
     te::graph::Vertex* v = new te::graph::Vertex(id);
 

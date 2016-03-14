@@ -24,9 +24,20 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 // TerraLib
+#include <terralib/dataaccess/datasource/DataSource.h>
+#include <terralib/dataaccess/datasource/DataSourceFactory.h>
+#include <terralib/datatype/SimpleProperty.h>
+#include <terralib/geometry/GeometryProperty.h>
+#include <terralib/geometry/LineString.h>
 #include <terralib/graph/builder/FlowGraphBuilder.h>
 #include <terralib/graph/core/AbstractGraph.h>
+#include <terralib/graph/core/Edge.h>
+#include <terralib/graph/core/GraphMetadata.h>
+#include <terralib/graph/core/Vertex.h>
+#include <terralib/graph/iterator/MemoryIterator.h>
 #include <terralib/graph/Globals.h>
+#include <terralib/memory/DataSet.h>
+#include <terralib/memory/DataSetItem.h>
 
 
 #include "FlowDiagramDialog.h"
@@ -37,6 +48,14 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 
 Q_DECLARE_METATYPE(te::map::AbstractLayerPtr);
+
+std::auto_ptr<te::da::DataSetType> CreateDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph);
+
+std::auto_ptr<te::mem::DataSet> CreateDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph);
+
+std::map<int, std::string> GetGraphPropertyMap(te::graph::AbstractGraph* graph);
+
+bool GetGraphVerterxAttrIndex(te::graph::AbstractGraph* graph, std::string attrName, int& index);
 
 te::qt::plugins::fiocruz::FlowDiagramDialog::FlowDiagramDialog(QWidget* parent, Qt::WindowFlags f)
 : QDialog(parent, f),
@@ -127,6 +146,158 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
     //std::cout << std::endl << "An unexpected exception has occuried in Graph Example!" << std::endl;
   }
 
-  graph->flush();
+  //export graph to shape
+  std::map<std::string, std::string> connInfoOut;
+  connInfoOut["URI"] = "d:/teste.shp";
 
+  std::auto_ptr<te::da::DataSource> ds = te::da::DataSourceFactory::make("OGR");
+  ds->setConnectionInfo(connInfoOut);
+  ds->open();
+
+  std::string dataSetName = "teste";
+  
+  std::auto_ptr<te::da::DataSetType> dsType = CreateDataSetType(dataSetName, graph.get());
+
+  std::auto_ptr<te::mem::DataSet> dataSet = CreateDataSet(dsType.get(), graph.get());
+
+  
+  if (dsType.get() && dataSet.get())
+  {
+    dataSet->moveBeforeFirst();
+
+    std::map<std::string, std::string> options;
+
+    ds->createDataSet(dsType.get(), options);
+
+    ds->add(dataSetName, dataSet.get(), options);
+  }
+
+  ds->close();
+
+  graph->flush();
+}
+
+std::auto_ptr<te::da::DataSetType> CreateDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph)
+{
+  std::auto_ptr<te::da::DataSetType> dataSetType(new te::da::DataSetType(dataSetName));
+
+  //create index property
+  te::dt::SimpleProperty* idxProperty = new te::dt::SimpleProperty("index", te::dt::INT32_TYPE);
+  dataSetType->add(idxProperty);
+
+  //create all graph properties
+  for (int i = 0; i < graph->getMetadata()->getEdgePropertySize(); ++i)
+  {
+    te::dt::Property* prop = graph->getMetadata()->getEdgeProperty(i);
+
+    te::dt::Property* newProp = prop->clone();
+    newProp->setId(0);
+    newProp->setParent(0);
+
+    dataSetType->add(newProp);
+  }
+
+  //create geometry prop
+  te::gm::GeometryProperty* geomProp = new te::gm::GeometryProperty("line", graph->getMetadata()->getSRID(), te::gm::LineStringType, true);
+  dataSetType->add(geomProp);
+
+  return dataSetType;
+}
+
+std::auto_ptr<te::mem::DataSet> CreateDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph)
+{
+  std::auto_ptr<te::mem::DataSet> outDataset(new te::mem::DataSet(dsType));
+
+  //get property map
+  std::map<int, std::string> propMap = GetGraphPropertyMap(graph);
+
+  //vertex geom prop
+  int spatialPropertyId = -1;
+  GetGraphVerterxAttrIndex(graph, "coords", spatialPropertyId);
+
+  //create graph iterator
+  std::auto_ptr<te::graph::MemoryIterator> it(new te::graph::MemoryIterator(graph));
+
+  te::graph::Edge* e = it->getFirstEdge();
+
+  while (!it->isEdgeIteratorAfterEnd())
+  {
+    //create dataset item
+    te::mem::DataSetItem* outDSetItem = new te::mem::DataSetItem(outDataset.get());
+
+    //get vertex info
+    int idx = e->getId();
+
+    //set index information
+    outDSetItem->setInt32("index", idx);
+
+    //set the other attributes
+    std::vector<te::dt::AbstractData*> adVec = e->getAttributes();
+
+    std::map<int, std::string>::iterator itMap = propMap.begin();
+
+    while (itMap != propMap.end())
+    {
+      te::dt::AbstractData* adClone = adVec[itMap->first]->clone();
+
+      outDSetItem->setValue(itMap->second, adClone);
+
+      ++itMap;
+    }
+
+    //create line
+    te::graph::Vertex* vFrom = graph->getVertex(e->getIdFrom());
+    te::graph::Vertex* vTo = graph->getVertex(e->getIdTo());
+
+    if (vFrom && vTo)
+    {
+      te::gm::Point* pFrom = dynamic_cast<te::gm::Point*>(vFrom->getAttributes()[spatialPropertyId]);
+      te::gm::Point* pTo = dynamic_cast<te::gm::Point*>(vTo->getAttributes()[spatialPropertyId]);
+
+      te::gm::LineString* line = new te::gm::LineString(2, te::gm::LineStringType, graph->getMetadata()->getSRID());
+      line->setPoint(0, pFrom->getX(), pFrom->getY());
+      line->setPoint(1, pTo->getX(), pTo->getY());
+
+      outDSetItem->setGeometry("line", line);
+
+      //add item into dataset
+      outDataset->add(outDSetItem);
+    }
+    else
+    {
+      delete outDSetItem;
+    }
+
+    e = it->getNextEdge();
+  }
+
+  return outDataset;
+}
+
+std::map<int, std::string> GetGraphPropertyMap(te::graph::AbstractGraph* graph)
+{
+  std::map<int, std::string> propMap;
+
+  for (int i = 0; i < graph->getMetadata()->getEdgePropertySize(); ++i)
+  {
+    te::dt::Property* prop = graph->getMetadata()->getEdgeProperty(i);
+
+    propMap.insert(std::map<int, std::string>::value_type(i, prop->getName()));
+  }
+
+  return propMap;
+}
+
+bool GetGraphVerterxAttrIndex(te::graph::AbstractGraph* graph, std::string attrName, int& index)
+{
+  for (int i = 0; i < graph->getVertexPropertySize(); ++i)
+  {
+    if (graph->getVertexProperty(i)->getName() == attrName)
+    {
+      index = i;
+      return true;
+    }
+  }
+
+  return false;
 }

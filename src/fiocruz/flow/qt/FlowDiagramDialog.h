@@ -27,6 +27,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #define __FIOCRUZ_INTERNAL_FLOW_FLOWDIAGRAMDIALOG_H
 
 // TerraLib
+#include <terralib/dataaccess/datasource/DataSourceInfo.h>
 #include <terralib/maptools/AbstractLayer.h>
 #include "../../Config.h"
 
@@ -67,11 +68,21 @@ namespace te
 
         public slots:
 
+          void onSpatialLayerComboBoxActivated(int index);
+
+          void onTabularLayerComboBoxActivated(int index);
+
+          void onTargetDatasourceToolButtonPressed();
+
+          void onTargetFileToolButtonPressed();
+
           void onOkPushButtonClicked();
 
         private:
 
           std::auto_ptr<Ui::FlowDiagramDialogForm> m_ui;
+
+          te::da::DataSourceInfoPtr m_outputDatasource;
 
         };
       }   // end namespace fiocruz

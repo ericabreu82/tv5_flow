@@ -24,38 +24,30 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 // TerraLib
+#include <terralib/common/STLUtils.h>
 #include <terralib/dataaccess/datasource/DataSource.h>
 #include <terralib/dataaccess/datasource/DataSourceFactory.h>
-#include <terralib/datatype/SimpleProperty.h>
-#include <terralib/geometry/GeometryProperty.h>
-#include <terralib/geometry/LineString.h>
-#include <terralib/graph/builder/FlowGraphBuilder.h>
-#include <terralib/graph/core/AbstractGraph.h>
-#include <terralib/graph/core/Edge.h>
-#include <terralib/graph/core/GraphMetadata.h>
-#include <terralib/graph/core/Vertex.h>
-#include <terralib/graph/iterator/MemoryIterator.h>
+#include <terralib/dataaccess/datasource/DataSourceInfoManager.h>
+#include <terralib/dataaccess/datasource/DataSourceManager.h>
+#include <terralib/qt/widgets/datasource/selector/DataSourceSelectorDialog.h>
 #include <terralib/graph/Globals.h>
-#include <terralib/memory/DataSet.h>
-#include <terralib/memory/DataSetItem.h>
 
-
+#include "../FlowGraphDiagramBuilder.h"
+#include "../FlowGraphExport.h"
 #include "FlowDiagramDialog.h"
 #include "ui_FlowDiagramDialogForm.h"
 
 // Qt
 #include <QMessageBox>
+#include <QFileDialog>
+
+// Boost
+#include <boost/filesystem.hpp>
+#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 
 Q_DECLARE_METATYPE(te::map::AbstractLayerPtr);
-
-std::auto_ptr<te::da::DataSetType> CreateDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph);
-
-std::auto_ptr<te::mem::DataSet> CreateDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph);
-
-std::map<int, std::string> GetGraphPropertyMap(te::graph::AbstractGraph* graph);
-
-bool GetGraphVerterxAttrIndex(te::graph::AbstractGraph* graph, std::string attrName, int& index);
 
 te::qt::plugins::fiocruz::FlowDiagramDialog::FlowDiagramDialog(QWidget* parent, Qt::WindowFlags f)
 : QDialog(parent, f),
@@ -64,7 +56,13 @@ m_ui(new Ui::FlowDiagramDialogForm)
   // add controls
   m_ui->setupUi(this);
 
+  m_ui->m_targetDatasourceToolButton->setIcon(QIcon::fromTheme("datasource"));
+
   //connects
+  connect(m_ui->m_spatialLayerComboBox, SIGNAL(activated(int)), this, SLOT(onSpatialLayerComboBoxActivated(int)));
+  connect(m_ui->m_tabularLayerComboBox, SIGNAL(activated(int)), this, SLOT(onTabularLayerComboBoxActivated(int)));
+  connect(m_ui->m_targetDatasourceToolButton, SIGNAL(pressed()), this, SLOT(onTargetDatasourceToolButtonPressed()));
+  connect(m_ui->m_targetFileToolButton, SIGNAL(pressed()), this, SLOT(onTargetFileToolButtonPressed()));
   connect(m_ui->m_okPushButton, SIGNAL(released()), this, SLOT(onOkPushButtonClicked()));
 }
 
@@ -75,7 +73,32 @@ te::qt::plugins::fiocruz::FlowDiagramDialog::~FlowDiagramDialog()
 
 void te::qt::plugins::fiocruz::FlowDiagramDialog::setLayerList(std::list<te::map::AbstractLayerPtr> list)
 {
+  m_ui->m_spatialLayerComboBox->clear();
+  m_ui->m_tabularLayerComboBox->clear();
 
+  //set layers into combo box
+  std::list<te::map::AbstractLayerPtr>::iterator it = list.begin();
+
+  while (it != list.end())
+  {
+    te::map::AbstractLayerPtr l = *it;
+
+    std::auto_ptr<te::da::DataSetType> dsType = l->getSchema();
+
+    if (dsType->hasGeom())
+      m_ui->m_spatialLayerComboBox->addItem(l->getTitle().c_str(), QVariant::fromValue(l));
+
+    if (!dsType->hasRaster())
+      m_ui->m_tabularLayerComboBox->addItem(l->getTitle().c_str(), QVariant::fromValue(l));
+
+    ++it;
+  }
+
+  if (m_ui->m_spatialLayerComboBox->count() > 0)
+    onSpatialLayerComboBoxActivated(0);
+
+  if (m_ui->m_tabularLayerComboBox->count() > 0)
+    onTabularLayerComboBoxActivated(0);
 }
 
 void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
@@ -126,16 +149,14 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
 
   try
   {
-    te::graph::FlowGraphBuilder* builder = new te::graph::FlowGraphBuilder();
+    te::qt::plugins::fiocruz::FlowGraphDiagramBuilder builder;
 
-    if (!builder->build(shapeFileName, linkColumn, srid, csvFileName, fromIdx, toIdx, weightIdx, connInfo, graphType, graphInfo))
-    {
-      //std::cout << std::endl << "An exception has occuried in Graph Example: " << builder->getErrorMessage() << std::endl;
-    }
+    //if (!builder.build(shapeFileName, linkColumn, srid, csvFileName, fromIdx, toIdx, weightIdx, connInfo, graphType, graphInfo))
+    //{
+    //  //std::cout << std::endl << "An exception has occuried in Graph Example: " << builder->getErrorMessage() << std::endl;
+    //}
 
-    graph = builder->getGraph();
-
-    delete builder;
+    graph = builder.getGraph();
   }
   catch (const std::exception& e)
   {
@@ -155,21 +176,23 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
   ds->open();
 
   std::string dataSetName = "teste";
-  
-  std::auto_ptr<te::da::DataSetType> dsType = CreateDataSetType(dataSetName, graph.get());
 
-  std::auto_ptr<te::mem::DataSet> dataSet = CreateDataSet(dsType.get(), graph.get());
+  //export
+  te::qt::plugins::fiocruz::FlowGraphExport fge;
 
-  
-  if (dsType.get() && dataSet.get())
+  try
   {
-    dataSet->moveBeforeFirst();
+    te::da::DataSourcePtr dsPtr(ds.get());
 
-    std::map<std::string, std::string> options;
-
-    ds->createDataSet(dsType.get(), options);
-
-    ds->add(dataSetName, dataSet.get(), options);
+    fge.exportGraph(dsPtr, dataSetName, graph.get());
+  }
+  catch (const std::exception& e)
+  {
+    
+  }
+  catch (...)
+  {
+    
   }
 
   ds->close();
@@ -177,127 +200,107 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
   graph->flush();
 }
 
-std::auto_ptr<te::da::DataSetType> CreateDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph)
+void te::qt::plugins::fiocruz::FlowDiagramDialog::onSpatialLayerComboBoxActivated(int index)
 {
-  std::auto_ptr<te::da::DataSetType> dataSetType(new te::da::DataSetType(dataSetName));
+  QVariant varLayer = m_ui->m_spatialLayerComboBox->itemData(index, Qt::UserRole);
 
-  //create index property
-  te::dt::SimpleProperty* idxProperty = new te::dt::SimpleProperty("index", te::dt::INT32_TYPE);
-  dataSetType->add(idxProperty);
+  te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
 
-  //create all graph properties
-  for (int i = 0; i < graph->getMetadata()->getEdgePropertySize(); ++i)
+  m_ui->m_spatialPropertyComboBox->clear();
+
+  //set properties from spatial layer into referency property combo
+  std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
+
+  for (std::size_t t = 0; t < dsType->getProperties().size(); ++t)
   {
-    te::dt::Property* prop = graph->getMetadata()->getEdgeProperty(i);
+    te::dt::Property* prop = dsType->getProperties()[t];
 
-    te::dt::Property* newProp = prop->clone();
-    newProp->setId(0);
-    newProp->setParent(0);
-
-    dataSetType->add(newProp);
+    if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::INT64_TYPE || prop->getType() == te::dt::STRING_TYPE)
+      m_ui->m_spatialPropertyComboBox->addItem(dsType->getProperties()[t]->getName().c_str());
   }
-
-  //create geometry prop
-  te::gm::GeometryProperty* geomProp = new te::gm::GeometryProperty("line", graph->getMetadata()->getSRID(), te::gm::LineStringType, true);
-  dataSetType->add(geomProp);
-
-  return dataSetType;
 }
 
-std::auto_ptr<te::mem::DataSet> CreateDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph)
+void te::qt::plugins::fiocruz::FlowDiagramDialog::onTabularLayerComboBoxActivated(int index)
 {
-  std::auto_ptr<te::mem::DataSet> outDataset(new te::mem::DataSet(dsType));
+  QVariant varLayer = m_ui->m_tabularLayerComboBox->itemData(index, Qt::UserRole);
 
-  //get property map
-  std::map<int, std::string> propMap = GetGraphPropertyMap(graph);
+  te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
 
-  //vertex geom prop
-  int spatialPropertyId = -1;
-  GetGraphVerterxAttrIndex(graph, "coords", spatialPropertyId);
+  m_ui->m_tabularOriginComboBox->clear();
+  m_ui->m_tabularDestinyComboBox->clear();
 
-  //create graph iterator
-  std::auto_ptr<te::graph::MemoryIterator> it(new te::graph::MemoryIterator(graph));
+  //set properties from tabular layer into combos
+  std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
 
-  te::graph::Edge* e = it->getFirstEdge();
-
-  while (!it->isEdgeIteratorAfterEnd())
+  for (std::size_t t = 0; t < dsType->getProperties().size(); ++t)
   {
-    //create dataset item
-    te::mem::DataSetItem* outDSetItem = new te::mem::DataSetItem(outDataset.get());
+    te::dt::Property* prop = dsType->getProperties()[t];
 
-    //get vertex info
-    int idx = e->getId();
-
-    //set index information
-    outDSetItem->setInt32("index", idx);
-
-    //set the other attributes
-    std::vector<te::dt::AbstractData*> adVec = e->getAttributes();
-
-    std::map<int, std::string>::iterator itMap = propMap.begin();
-
-    while (itMap != propMap.end())
+    if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::STRING_TYPE)
     {
-      te::dt::AbstractData* adClone = adVec[itMap->first]->clone();
-
-      outDSetItem->setValue(itMap->second, adClone);
-
-      ++itMap;
+      m_ui->m_tabularOriginComboBox->addItem(dsType->getProperties()[t]->getName().c_str());
+      m_ui->m_tabularDestinyComboBox->addItem(dsType->getProperties()[t]->getName().c_str());
     }
-
-    //create line
-    te::graph::Vertex* vFrom = graph->getVertex(e->getIdFrom());
-    te::graph::Vertex* vTo = graph->getVertex(e->getIdTo());
-
-    if (vFrom && vTo)
-    {
-      te::gm::Point* pFrom = dynamic_cast<te::gm::Point*>(vFrom->getAttributes()[spatialPropertyId]);
-      te::gm::Point* pTo = dynamic_cast<te::gm::Point*>(vTo->getAttributes()[spatialPropertyId]);
-
-      te::gm::LineString* line = new te::gm::LineString(2, te::gm::LineStringType, graph->getMetadata()->getSRID());
-      line->setPoint(0, pFrom->getX(), pFrom->getY());
-      line->setPoint(1, pTo->getX(), pTo->getY());
-
-      outDSetItem->setGeometry("line", line);
-
-      //add item into dataset
-      outDataset->add(outDSetItem);
-    }
-    else
-    {
-      delete outDSetItem;
-    }
-
-    e = it->getNextEdge();
   }
-
-  return outDataset;
 }
 
-std::map<int, std::string> GetGraphPropertyMap(te::graph::AbstractGraph* graph)
+void te::qt::plugins::fiocruz::FlowDiagramDialog::onTargetDatasourceToolButtonPressed()
 {
-  std::map<int, std::string> propMap;
+  m_ui->m_newLayerNameLineEdit->clear();
+  m_ui->m_newLayerNameLineEdit->setEnabled(true);
 
-  for (int i = 0; i < graph->getMetadata()->getEdgePropertySize(); ++i)
-  {
-    te::dt::Property* prop = graph->getMetadata()->getEdgeProperty(i);
+  te::qt::widgets::DataSourceSelectorDialog dlg(this);
+  dlg.exec();
 
-    propMap.insert(std::map<int, std::string>::value_type(i, prop->getName()));
-  }
+  std::list<te::da::DataSourceInfoPtr> dsPtrList = dlg.getSelecteds();
 
-  return propMap;
+  if (dsPtrList.size() <= 0)
+    return;
+
+  std::list<te::da::DataSourceInfoPtr>::iterator it = dsPtrList.begin();
+
+  m_ui->m_repositoryLineEdit->setText(QString(it->get()->getTitle().c_str()));
+
+  m_outputDatasource = *it;
 }
 
-bool GetGraphVerterxAttrIndex(te::graph::AbstractGraph* graph, std::string attrName, int& index)
+void te::qt::plugins::fiocruz::FlowDiagramDialog::onTargetFileToolButtonPressed()
 {
-  for (int i = 0; i < graph->getVertexPropertySize(); ++i)
-  {
-    if (graph->getVertexProperty(i)->getName() == attrName)
-    {
-      index = i;
-      return true;
-    }
-  }
+  m_ui->m_newLayerNameLineEdit->clear();
+  m_ui->m_repositoryLineEdit->clear();
 
-  return false;
+  QString fileName = QFileDialog::getSaveFileName(this, tr("Save as..."), QString(), tr("Shapefile (*.shp *.SHP);;"), 0, QFileDialog::DontConfirmOverwrite);
+
+  if (fileName.isEmpty())
+    return;
+
+  boost::filesystem::path outfile(fileName.toStdString());
+
+  m_ui->m_repositoryLineEdit->setText(outfile.string().c_str());
+
+  m_ui->m_newLayerNameLineEdit->setText(outfile.leaf().string().c_str());
+
+  m_ui->m_newLayerNameLineEdit->setEnabled(false);
+
+  //create new data source
+  boost::filesystem::path uri(m_ui->m_repositoryLineEdit->text().toStdString());
+
+  std::map<std::string, std::string> dsInfo;
+  dsInfo["URI"] = uri.string();
+
+  boost::uuids::basic_random_generator<boost::mt19937> gen;
+  boost::uuids::uuid u = gen();
+  std::string id_ds = boost::uuids::to_string(u);
+
+  te::da::DataSourceInfoPtr dsInfoPtr(new te::da::DataSourceInfo);
+  dsInfoPtr->setConnInfo(dsInfo);
+  dsInfoPtr->setTitle(uri.stem().string());
+  dsInfoPtr->setAccessDriver("OGR");
+  dsInfoPtr->setType("OGR");
+  dsInfoPtr->setDescription(uri.string());
+  dsInfoPtr->setId(id_ds);
+
+  te::da::DataSourceInfoManager::getInstance().add(dsInfoPtr);
+
+  m_outputDatasource = dsInfoPtr;
 }

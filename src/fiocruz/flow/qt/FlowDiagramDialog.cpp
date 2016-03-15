@@ -118,7 +118,8 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
   te::da::DataSourcePtr spatialDs = te::da::GetDataSource(spatialLayer->getDataSourceId());
   std::string spatialDataSetName = spatialDsType->getName();
 
-  int linkColumnIdx = m_ui->m_spatialPropertyComboBox->currentData().toInt();
+  int linkColumnIdx = m_ui->m_spatialPropertyIdxComboBox->currentData().toInt();
+  int linkColumnName = m_ui->m_spatialPropertyNameComboBox->currentData().toInt();
   int srid = spatialLayer->getSRID();
 
   //get get input tabular info
@@ -171,7 +172,7 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
   {
     te::qt::plugins::fiocruz::FlowGraphDiagramBuilder builder;
 
-    if (!builder.build(spatialDs, spatialDataSetName, linkColumnIdx, srid, tabularDs, tabularDataSetName, fromIdx, toIdx, weightIdx, connInfo, graphType, graphInfo))
+    if (!builder.build(spatialDs, spatialDataSetName, linkColumnIdx, linkColumnName, srid, tabularDs, tabularDataSetName, fromIdx, toIdx, weightIdx, connInfo, graphType, graphInfo))
     {
       QMessageBox::warning(this, tr("Warning"), builder.getErrorMessage().c_str());
     }
@@ -229,7 +230,8 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onSpatialLayerComboBoxActivate
 
   te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
 
-  m_ui->m_spatialPropertyComboBox->clear();
+  m_ui->m_spatialPropertyIdxComboBox->clear();
+  m_ui->m_spatialPropertyNameComboBox->clear();
 
   //set properties from spatial layer into referency property combo
   std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
@@ -239,7 +241,10 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onSpatialLayerComboBoxActivate
     te::dt::Property* prop = dsType->getProperties()[t];
 
     if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::INT64_TYPE || prop->getType() == te::dt::STRING_TYPE)
-      m_ui->m_spatialPropertyComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+    {
+      m_ui->m_spatialPropertyIdxComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+      m_ui->m_spatialPropertyNameComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+    }
   }
 }
 

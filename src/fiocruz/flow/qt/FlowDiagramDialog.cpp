@@ -38,6 +38,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "../FlowGraphExport.h"
 #include "FlowDiagramDialog.h"
 #include "ui_FlowDiagramDialogForm.h"
+#include "FlowNetworkRenderer.h"
 
 // Qt
 #include <QMessageBox>
@@ -216,6 +217,8 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
   te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
 
   m_outputLayer = converter(dt);
+
+  FlowNetworkRenderer* renderer = new FlowNetworkRenderer();
 
   accept();
 }

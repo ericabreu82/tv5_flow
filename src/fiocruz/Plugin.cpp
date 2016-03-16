@@ -36,6 +36,7 @@
 
 #ifdef FIOCRUZ_HAVE_FLOWDIAGRAM
   #include "flow/FlowDiagramAction.h"
+  #include "flow/qt/FlowNetworkRenderer.h"
 #endif
 
 #ifdef FIOCRUZ_HAVE_FLOWNETWORK
@@ -116,6 +117,8 @@ void te::qt::plugins::fiocruz::Plugin::registerActions()
 #ifdef FIOCRUZ_HAVE_FLOWDIAGRAM
   m_flowDiagram = new te::qt::plugins::fiocruz::FlowDiagramAction(m_flowMenu);
   connect(m_flowDiagram, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
+
+  te::qt::plugins::fiocruz::FlowNetworkRendererFactory::initialize();
 #endif
 
 #ifdef FIOCRUZ_HAVE_FLOWNETWORK
@@ -142,6 +145,8 @@ void  te::qt::plugins::fiocruz::Plugin::unRegisterActions()
 
 #ifdef FIOCRUZ_HAVE_FLOWDIAGRAM
     delete m_flowDiagram;
+
+    te::qt::plugins::fiocruz::FlowNetworkRendererFactory::finalize();
 #endif
 
 #ifdef FIOCRUZ_HAVE_FLOWNETWORK

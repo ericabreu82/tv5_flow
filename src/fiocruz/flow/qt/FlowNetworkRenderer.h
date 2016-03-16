@@ -29,6 +29,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 // TerraLib
 #include "../../Config.h"
 
+#include <terralib/color/RGBAColor.h>
 #include <terralib/maptools/AbstractLayerRenderer.h>
 #include <terralib/maptools/RendererFactory.h>
 
@@ -38,7 +39,10 @@ namespace te
   {
     class Envelope;
     class LineString;
+    class MultiLineString;
   }
+
+  namespace se { class Mark; }
 
   namespace qt
   {
@@ -62,8 +66,15 @@ namespace te
 
           virtual void drawFlowLine(te::map::Canvas* canvas, te::gm::LineString* line);
 
+          virtual void drawFlowMultiLine(te::map::Canvas* canvas, te::gm::MultiLineString* line);
+
           virtual void drawDatSetGeometries(te::da::DataSet* dataset, const std::size_t& gpos,
             te::map::Canvas* canvas, int fromSRID, int toSRID, te::map::Chart* chart, bool* cancel, te::common::TaskProgress* task = 0);
+
+        protected:
+
+          te::color::RGBAColor** m_pointPattern;            //!< Represents the pattern to draw a point
+          te::se::Mark*          m_pointMark;               //!< Represents the mark of a point
 
         };
 

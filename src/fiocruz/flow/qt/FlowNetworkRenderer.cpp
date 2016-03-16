@@ -28,9 +28,17 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/common/STLUtils.h>
 #include <terralib/common/progress/TaskProgress.h>
 #include <terralib/dataaccess/dataset/DataSet.h>
+#include <terralib/geometry/MultiLineString.h>
 #include <terralib/maptools/Canvas.h>
 #include <terralib/maptools/Chart.h>
+#include <terralib/maptools/MarkRendererManager.h>
+#include <terralib/se/Fill.h>
+#include <terralib/se/Mark.h>
+#include <terralib/se/Stroke.h>
+#include <terralib/se/Utils.h>
 #include <terralib/srs/Config.h>
+
+#define PATTERN_SIZE 12
 
 te::qt::plugins::fiocruz::FlowNetworkRendererFactory* te::qt::plugins::fiocruz::FlowNetworkRendererFactory::sm_factory(0);
 
@@ -42,7 +50,18 @@ te::qt::plugins::fiocruz::FlowNetworkRenderer::FlowNetworkRenderer()
 
 te::qt::plugins::fiocruz::FlowNetworkRenderer::~FlowNetworkRenderer()
 {
+  te::common::Free(m_pointPattern, PATTERN_SIZE);
+  delete m_pointMark;
+}
 
+void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawFlowMultiLine(te::map::Canvas* canvas, te::gm::MultiLineString* line)
+{
+  assert(line);
+
+  std::size_t size = line->getNumGeometries();
+
+  for (size_t i = 0; i < size; ++i)
+    drawFlowLine(canvas, static_cast<te::gm::LineString*>(line->getGeometryN(i)));
 }
 
 void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawFlowLine(te::map::Canvas* canvas, te::gm::LineString* line)
@@ -51,13 +70,13 @@ void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawFlowLine(te::map::Canvas
 
   const te::gm::Envelope* envelope = line->getMBR();
 
+  canvas->draw(line);
+
   if (envelope->getWidth() == 0. && envelope->getHeight() == 0.)
   {
     te::gm::Point point(envelope->getCenter().getX(), envelope->getCenter().getY());
     canvas->draw(&point);
   }
-
-  canvas->draw(line);
 }
 
 void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawDatSetGeometries(te::da::DataSet* dataset, const std::size_t& gpos,
@@ -70,6 +89,15 @@ void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawDatSetGeometries(te::da:
   bool needRemap = false;
   if ((fromSRID != TE_UNKNOWN_SRS) && (toSRID != TE_UNKNOWN_SRS) && (fromSRID != toSRID))
     needRemap = true;
+
+  //set renderer mask
+  //define mark selected
+  te::se::Stroke* stroke = te::se::CreateStroke("#000000", "1");
+  te::se::Fill* fill = te::se::CreateFill("#0000FF", "1.0");
+  m_pointMark = te::se::CreateMark("circle", stroke, fill);
+
+  m_pointPattern = te::map::MarkRendererManager::getInstance().render(m_pointMark, PATTERN_SIZE);
+  canvas->setPointPattern(m_pointPattern, PATTERN_SIZE, PATTERN_SIZE);
 
   do
   {
@@ -113,6 +141,13 @@ void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawDatSetGeometries(te::da:
     case te::gm::LineStringMType:
     case te::gm::LineStringZMType:
       drawFlowLine(canvas, static_cast<te::gm::LineString*>(geom.get()));
+      break;
+
+    case te::gm::MultiLineStringType:
+    case te::gm::MultiLineStringZType:
+    case te::gm::MultiLineStringMType:
+    case te::gm::MultiLineStringZMType:
+      drawFlowMultiLine(canvas, static_cast<te::gm::MultiLineString*>(geom.get()));
       break;
 
     default:

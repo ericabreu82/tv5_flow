@@ -36,7 +36,8 @@ namespace te
 {
   namespace gm
   {
-    Envelope;
+    class Envelope;
+    class LineString;
   }
 
   namespace qt

@@ -218,7 +218,11 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
 
   m_outputLayer = converter(dt);
 
-  FlowNetworkRenderer* renderer = new FlowNetworkRenderer();
+  te::map::DataSetLayer* dsLayer = dynamic_cast<te::map::DataSetLayer*>(m_outputLayer.get());
+  if (dsLayer != 0)
+  {
+    dsLayer->setRendererType("FLOWNETWORK_LAYER_RENDERER");
+  }
 
   accept();
 }

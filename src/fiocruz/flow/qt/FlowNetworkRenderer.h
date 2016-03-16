@@ -30,6 +30,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "../../Config.h"
 
 #include <terralib/maptools/AbstractLayerRenderer.h>
+#include <terralib/maptools/RendererFactory.h>
 
 namespace te
 {
@@ -58,10 +59,34 @@ namespace te
 
           virtual ~FlowNetworkRenderer();
 
-          //void drawDatSetGeometries(te::da::DataSet* dataset, const std::size_t& gpos,
-          //  te::map::Canvas* canvas, int fromSRID, int toSRID, te::map::Chart* chart, te::common::TaskProgress* task = 0);
+          virtual void drawFlowLine(te::map::Canvas* canvas, te::gm::LineString* line);
+
+          virtual void drawDatSetGeometries(te::da::DataSet* dataset, const std::size_t& gpos,
+            te::map::Canvas* canvas, int fromSRID, int toSRID, te::map::Chart* chart, bool* cancel, te::common::TaskProgress* task = 0);
 
         };
+
+        class FlowNetworkRendererFactory : public te::map::RendererFactory
+        {
+        public:
+
+          static void initialize();
+
+          static void finalize();
+
+          ~FlowNetworkRendererFactory();
+
+        protected:
+
+          te::map::AbstractRenderer* build();
+
+          FlowNetworkRendererFactory();
+
+        private:
+
+          static FlowNetworkRendererFactory* sm_factory; //!< A pointer to the global renderer factory.
+        };
+
       }   // end namespace fiocruz
     }     // end namespace plugins
   }       // end namespace qt

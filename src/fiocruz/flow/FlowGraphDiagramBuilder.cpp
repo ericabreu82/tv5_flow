@@ -28,6 +28,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/dataaccess/datasource/DataSourceFactory.h>
 #include <terralib/datatype/SimpleData.h>
 #include <terralib/datatype/SimpleProperty.h>
+#include <terralib/datatype/StringProperty.h>
 #include <terralib/geometry/GeometryProperty.h>
 #include <terralib/geometry/MultiPolygon.h>
 #include <terralib/geometry/Polygon.h>
@@ -51,7 +52,7 @@ te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::~FlowGraphDiagramBuilder()
 
 }
 
-bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::build(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const int& linkColumnIdx, const int& srid,
+bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::build(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const int& linkColumnIdx, const int& linkColumnName, const int& srid,
   te::da::DataSourcePtr tabularDs, const std::string& tabularDataSetName, const int& fromIdx, const int& toIdx, const int& weightIdx,
   const std::map<std::string, std::string>& dsInfo, const std::string& graphType, const std::map<std::string, std::string>& gInfo)
 {
@@ -67,7 +68,7 @@ bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::build(te::da::DataSource
     return false;
   }
 
-  if (createEdgeObjects(tabularDs, tabularDataSetName, fromIdx, toIdx, weightIdx) == false)
+  if (createEdgeObjects(tabularDs, tabularDataSetName, fromIdx, toIdx, weightIdx, linkColumnName) == false)
   {
     return false;
   }
@@ -206,14 +207,54 @@ bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createVertexObjects(te::
   return true;
 }
 
-bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createEdgeObjects(te::da::DataSourcePtr tabularDs, const std::string& tabularDataSetName, const int& fromIdx, const int& toIdx, const int& weightIdx)
+bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createEdgeObjects(te::da::DataSourcePtr tabularDs, const std::string& tabularDataSetName, const int& fromIdx, const int& toIdx, const int& weightIdx, const int& linkColumnName)
 {
-  //add weight property to graph
-  te::dt::SimpleProperty* p = new te::dt::SimpleProperty("weight", te::dt::INT32_TYPE);
-  p->setParent(0);
-  p->setId(0);
+ 
+  {//add from property to graph
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("from", te::dt::INT32_TYPE);
+    p->setParent(0);
+    p->setId(0);
+    m_graph->addEdgeProperty(p);
+  }
 
-  m_graph->addEdgeProperty(p);
+  {//add from alias property to graph
+    te::dt::SimpleProperty* p = new te::dt::StringProperty("from_name");
+    p->setParent(0);
+    p->setId(0);
+    m_graph->addEdgeProperty(p);
+  }
+
+  {//add to property to graph
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("to", te::dt::INT32_TYPE);
+    p->setParent(0);
+    p->setId(0);
+    m_graph->addEdgeProperty(p);
+  }
+
+  {//add to alias property to graph
+    te::dt::SimpleProperty* p = new te::dt::StringProperty("to_name");
+    p->setParent(0);
+    p->setId(0);
+    m_graph->addEdgeProperty(p);
+  }
+
+  {//add weight property to graph
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("weight", te::dt::INT32_TYPE);
+    p->setParent(0);
+    p->setId(0);
+    m_graph->addEdgeProperty(p);
+  }
+
+  {//add distance property to graph
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("distance", te::dt::DOUBLE_TYPE);
+    p->setParent(0);
+    p->setId(0);
+    m_graph->addEdgeProperty(p);
+  }
+
+  //vertex geom prop
+  int spatialPropertyId = -1;
+  getGraphVerterxAttrIndex(m_graph.get(), "coords", spatialPropertyId);
 
   //access tabular data set
   std::auto_ptr<te::da::DataSet> dataSet = tabularDs->getDataSet(tabularDataSetName);
@@ -227,19 +268,54 @@ bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createEdgeObjects(te::da
     std::string toStr = dataSet->getAsString(toIdx);
     std::string weightStr = dataSet->getAsString(weightIdx);
 
-    //create edge
+
     int id = getEdgeId();
     int from = atoi(fromStr.c_str());
     int to = atoi(toStr.c_str());
     int weight = atoi(weightStr.c_str());
 
-    te::graph::Edge* e = new te::graph::Edge(id, from, to);
+    te::graph::Vertex* vFrom = m_graph->getVertex(from);
+    te::graph::Vertex* vTo = m_graph->getVertex(to);
 
-    e->setAttributeVecSize(1); //weight attribute
-    e->addAttribute(0, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(weight));
+    if (vFrom && vTo)
+    {
+      te::gm::Point* pFrom = dynamic_cast<te::gm::Point*>(vFrom->getAttributes()[spatialPropertyId]);
+      te::gm::Point* pTo = dynamic_cast<te::gm::Point*>(vTo->getAttributes()[spatialPropertyId]);
 
-    m_graph->add(e);
+      double distance = pFrom->distance(pTo);
+      std::string fromName = vFrom->getAttributes()[linkColumnName]->toString();
+      std::string toName = vTo->getAttributes()[linkColumnName]->toString();
+
+
+      //create edge
+      te::graph::Edge* e = new te::graph::Edge(id, from, to);
+
+      e->setAttributeVecSize(6);
+
+      e->addAttribute(0, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(from));
+      e->addAttribute(1, new te::dt::SimpleData<std::string, te::dt::STRING_TIME>(fromName));
+      e->addAttribute(2, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(to));
+      e->addAttribute(3, new te::dt::SimpleData<std::string, te::dt::STRING_TIME>(toName));
+      e->addAttribute(4, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(weight));
+      e->addAttribute(5, new te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>(distance));
+
+      m_graph->add(e);
+    }
   }
 
   return true;
+}
+
+bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::getGraphVerterxAttrIndex(te::graph::AbstractGraph* graph, std::string attrName, int& index)
+{
+  for (int i = 0; i < graph->getVertexPropertySize(); ++i)
+  {
+    if (graph->getVertexProperty(i)->getName() == attrName)
+    {
+      index = i;
+      return true;
+    }
+  }
+
+  return false;
 }

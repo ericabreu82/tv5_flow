@@ -81,6 +81,7 @@ namespace te
           \param spatialDs            Data Source wiht vectorial data
           \param spatialDataSetName   Data set name wiht vectorial data
           \param linkColumnIdx        Column index from vectorial data used as link column
+          \param linkColumnName       Column index from vectorial data used as alias column
           \param srid                 Vectorial projection id
           \param tabularDs            Data Source wiht tabular data
           \param tabularDataSetName   Data set name wiht tabular data
@@ -94,7 +95,7 @@ namespace te
           \return True if the graph was correctly generated and false in other case.
 
           */
-          bool build(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const int& linkColumnIdx, const int& srid, 
+          bool build(te::da::DataSourcePtr spatialDs, const std::string& spatialDataSetName, const int& linkColumnIdx, const int& linkColumnName, const int& srid,
             te::da::DataSourcePtr tabularDs, const std::string& tabularDataSetName, const int& fromIdx, const int& toIdx, const int& weightIdx,
             const std::map<std::string, std::string>& dsInfo, const std::string& graphType, const std::map<std::string, std::string>& gInfo);
 
@@ -135,11 +136,14 @@ namespace te
           \param fromIdx              Index for column table with origin information.
           \param toIdx                Index for column table with destiny information.
           \param weightIdx            Index for column table with weight information.
+          \param linkColumnName       Column index from vectorial data used as alias column
 
           \return True if the edges was created correctly and false in othe case
 
           */
-          bool createEdgeObjects(te::da::DataSourcePtr tabularDs, const std::string& tabularDataSetName, const int& fromIdx, const int& toIdx, const int& weightIdx);
+          bool createEdgeObjects(te::da::DataSourcePtr tabularDs, const std::string& tabularDataSetName, const int& fromIdx, const int& toIdx, const int& weightIdx, const int& linkColumnName);
+
+          bool getGraphVerterxAttrIndex(te::graph::AbstractGraph* graph, std::string attrName, int& index);
 
         protected:
 

@@ -28,7 +28,10 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/common/STLUtils.h>
 #include <terralib/common/progress/TaskProgress.h>
 #include <terralib/dataaccess/dataset/DataSet.h>
+#include <terralib/geometry/Curve.h>
+#include <terralib/geometry/LinearRing.h>
 #include <terralib/geometry/MultiLineString.h>
+#include <terralib/geometry/Polygon.h>
 #include <terralib/maptools/Canvas.h>
 #include <terralib/maptools/Chart.h>
 #include <terralib/maptools/MarkRendererManager.h>
@@ -69,9 +72,55 @@ void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawFlowLine(te::map::Canvas
   assert(line);
 
   const te::gm::Envelope* envelope = line->getMBR();
+  int srid = line->getSRID();
 
   canvas->draw(line);
+  int width = canvas->getWidth();
+  //int arrowSize = (int)(width * 0.025); //2.5% of the width
+  double arrowSize = (double)(envelope->getWidth() * 0.2); //2.5% of the width
+  //envelope
 
+  te::gm::Coord2D coordBegin(line->getX(0), line->getY(0));
+  te::gm::Coord2D coordEnd(line->getX(1), line->getY(1));
+
+  double centerX = (coordBegin.getX() + coordEnd.getX()) / 2.0;
+
+  
+  double	slopy , cosy , siny;
+  
+  slopy = atan2((double)(coordBegin.getY() - coordEnd.getY()), (double)(coordBegin.getX() - coordEnd.getX()));
+  cosy = cos( slopy );
+  siny = sin( slopy );
+
+  //te::gm::Coord2D coord1(coordEnd.getX(), coordEnd.getY());
+  //te::gm::Coord2D coord2(coordEnd.getX() - int(-arrowSize*cosy - (arrowSize / 2.0*siny)), coordEnd.getY() - int(-arrowSize*siny + (arrowSize / 2.0*cosy)));
+  //te::gm::Coord2D coord3(coordEnd.getX() - int(-arrowSize*cosy + (arrowSize / 2.0*siny)), coordEnd.getY() + int(arrowSize / 2.0*cosy + arrowSize*siny));
+  //te::gm::Coord2D coord4(coordEnd.getX(), coordEnd.getY());
+
+  te::gm::Coord2D coord1(coordEnd.getX(), coordEnd.getY());
+  te::gm::Coord2D coord2(coordEnd.getX() - double(-arrowSize*cosy - (arrowSize / 2.0*siny)), coordEnd.getY() - double(-arrowSize*siny + (arrowSize / 2.0*cosy)));
+  te::gm::Coord2D coord3(coordEnd.getX() - double(-arrowSize*cosy + (arrowSize / 2.0*siny)), coordEnd.getY() + double(arrowSize / 2.0*cosy + arrowSize*siny));
+  te::gm::Coord2D coord4(coordEnd.getX(), coordEnd.getY());
+
+  te::gm::LinearRing* ring = new te::gm::LinearRing(4, te::gm::GeomType::LineStringType, srid);
+  ring->setPoint(0, coord1.getX(), coord1.getY());
+  ring->setPoint(1, coord2.getX(), coord2.getY());
+  ring->setPoint(2, coord3.getX(), coord3.getY());
+  ring->setPoint(3, coord4.getX(), coord4.getY());
+
+  te::gm::Polygon pArrow(1, te::gm::GeomType::PolygonType, srid);
+  pArrow.setRingN(0, ring);
+
+  canvas->draw(&pArrow);
+  /*
+  QPointArray points(4);
+  points[0]=QPoint(ptEnd.x(),ptEnd.y());
+  points[1] = QPoint(ptEnd.x() - int(-arrowSize*cosy - (arrowSize / 2.0*siny)), ptEnd.y() - int(-arrowSize*siny + (arrowSize / 2.0*cosy)));
+  points[2] = QPoint(ptEnd.x() - int(-arrowSize*cosy + (arrowSize / 2.0*siny)), ptEnd.y() + int(arrowSize / 2.0*cosy + arrowSize*siny));
+  points[3]=QPoint(ptEnd.x(),ptEnd.y());
+  */
+
+  
   if (envelope->getWidth() == 0. && envelope->getHeight() == 0.)
   {
     te::gm::Point point(envelope->getCenter().getX(), envelope->getCenter().getY());

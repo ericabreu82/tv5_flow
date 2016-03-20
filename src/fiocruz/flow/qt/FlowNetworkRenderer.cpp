@@ -55,6 +55,9 @@ te::qt::plugins::fiocruz::FlowNetworkRenderer::~FlowNetworkRenderer()
 {
   te::common::Free(m_pointPattern, PATTERN_SIZE);
   delete m_pointMark;
+
+  te::common::Free(m_arrowPattern, PATTERN_SIZE);
+  delete m_arrowMark;
 }
 
 void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawFlowMultiLine(te::map::Canvas* canvas, te::gm::MultiLineString* line)
@@ -72,57 +75,34 @@ void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawFlowLine(te::map::Canvas
   assert(line);
 
   const te::gm::Envelope* envelope = line->getMBR();
-  int srid = line->getSRID();
 
-  canvas->draw(line);
-  int width = canvas->getWidth();
-  //int arrowSize = (int)(width * 0.025); //2.5% of the width
-  double arrowSize = (double)(envelope->getWidth() * 0.2); //2.5% of the width
-  //envelope
-
-  te::gm::Coord2D coordBegin(line->getX(0), line->getY(0));
-  te::gm::Coord2D coordEnd(line->getX(1), line->getY(1));
-
-  double centerX = (coordBegin.getX() + coordEnd.getX()) / 2.0;
-
-  
-  double	slopy , cosy , siny;
-  
-  slopy = atan2((double)(coordBegin.getY() - coordEnd.getY()), (double)(coordBegin.getX() - coordEnd.getX()));
-  cosy = cos( slopy );
-  siny = sin( slopy );
-
-  //te::gm::Coord2D coord1(coordEnd.getX(), coordEnd.getY());
-  //te::gm::Coord2D coord2(coordEnd.getX() - int(-arrowSize*cosy - (arrowSize / 2.0*siny)), coordEnd.getY() - int(-arrowSize*siny + (arrowSize / 2.0*cosy)));
-  //te::gm::Coord2D coord3(coordEnd.getX() - int(-arrowSize*cosy + (arrowSize / 2.0*siny)), coordEnd.getY() + int(arrowSize / 2.0*cosy + arrowSize*siny));
-  //te::gm::Coord2D coord4(coordEnd.getX(), coordEnd.getY());
-
-  te::gm::Coord2D coord1(coordEnd.getX(), coordEnd.getY());
-  te::gm::Coord2D coord2(coordEnd.getX() - double(-arrowSize*cosy - (arrowSize / 2.0*siny)), coordEnd.getY() - double(-arrowSize*siny + (arrowSize / 2.0*cosy)));
-  te::gm::Coord2D coord3(coordEnd.getX() - double(-arrowSize*cosy + (arrowSize / 2.0*siny)), coordEnd.getY() + double(arrowSize / 2.0*cosy + arrowSize*siny));
-  te::gm::Coord2D coord4(coordEnd.getX(), coordEnd.getY());
-
-  te::gm::LinearRing* ring = new te::gm::LinearRing(4, te::gm::GeomType::LineStringType, srid);
-  ring->setPoint(0, coord1.getX(), coord1.getY());
-  ring->setPoint(1, coord2.getX(), coord2.getY());
-  ring->setPoint(2, coord3.getX(), coord3.getY());
-  ring->setPoint(3, coord4.getX(), coord4.getY());
-
-  te::gm::Polygon pArrow(1, te::gm::GeomType::PolygonType, srid);
-  pArrow.setRingN(0, ring);
-
-  canvas->draw(&pArrow);
-  /*
-  QPointArray points(4);
-  points[0]=QPoint(ptEnd.x(),ptEnd.y());
-  points[1] = QPoint(ptEnd.x() - int(-arrowSize*cosy - (arrowSize / 2.0*siny)), ptEnd.y() - int(-arrowSize*siny + (arrowSize / 2.0*cosy)));
-  points[2] = QPoint(ptEnd.x() - int(-arrowSize*cosy + (arrowSize / 2.0*siny)), ptEnd.y() + int(arrowSize / 2.0*cosy + arrowSize*siny));
-  points[3]=QPoint(ptEnd.x(),ptEnd.y());
-  */
-
-  
   if (envelope->getWidth() == 0. && envelope->getHeight() == 0.)
   {
+    //internal flow - draw mark (circle)
+    canvas->setPointColor(te::color::RGBAColor(0, 0, 255, TE_TRANSPARENT));
+    canvas->setPointPattern(m_pointPattern, PATTERN_SIZE, PATTERN_SIZE);
+
+    te::gm::Point point(envelope->getCenter().getX(), envelope->getCenter().getY());
+    canvas->draw(&point);
+  }
+  else 
+  {
+    //draw line
+    canvas->draw(line);
+
+    //calculate rotation
+    double slopy, siny;
+    
+    slopy = atan2((double)(line->getPointN(0)->getY() - line->getPointN(1)->getY()), (double)(line->getPointN(0)->getX() - line->getPointN(1)->getX()));
+    siny = sin( slopy );
+
+    double angle = (asin(siny)) * 180. / 3.14159265;
+
+    //draw mark in the middle of line
+    canvas->setPointColor(te::color::RGBAColor(255, 0, 0, TE_TRANSPARENT));
+    canvas->setPointPatternRotation(angle + 90.);
+    canvas->setPointPattern(m_arrowPattern, PATTERN_SIZE, PATTERN_SIZE);
+
     te::gm::Point point(envelope->getCenter().getX(), envelope->getCenter().getY());
     canvas->draw(&point);
   }
@@ -139,14 +119,20 @@ void te::qt::plugins::fiocruz::FlowNetworkRenderer::drawDatSetGeometries(te::da:
   if ((fromSRID != TE_UNKNOWN_SRS) && (toSRID != TE_UNKNOWN_SRS) && (fromSRID != toSRID))
     needRemap = true;
 
-  //set renderer mask
-  //define mark selected
-  te::se::Stroke* stroke = te::se::CreateStroke("#000000", "1");
-  te::se::Fill* fill = te::se::CreateFill("#0000FF", "1.0");
-  m_pointMark = te::se::CreateMark("circle", stroke, fill);
+  //set mask to represent the internal flow
+  te::se::Stroke* strokePoint = te::se::CreateStroke("#000000", "1");
+  te::se::Fill* fillPoint = te::se::CreateFill("#0000FF", "1.0");
+  m_pointMark = te::se::CreateMark("circle", strokePoint, fillPoint);
 
   m_pointPattern = te::map::MarkRendererManager::getInstance().render(m_pointMark, PATTERN_SIZE);
-  canvas->setPointPattern(m_pointPattern, PATTERN_SIZE, PATTERN_SIZE);
+
+  //set mask to represent the arrow line
+  te::se::Stroke* strokeArrow = te::se::CreateStroke("#000000", "1");
+  te::se::Fill* fillArrow = te::se::CreateFill("#FF0000", "1.0");
+  m_arrowMark = te::se::CreateMark("triangle", strokeArrow, fillArrow);
+
+  m_arrowPattern = te::map::MarkRendererManager::getInstance().render(m_arrowMark, PATTERN_SIZE);
+
 
   do
   {
@@ -249,5 +235,4 @@ te::qt::plugins::fiocruz::FlowNetworkRendererFactory::FlowNetworkRendererFactory
   : RendererFactory("FLOWNETWORK_LAYER_RENDERER")
 {
 }
-
 

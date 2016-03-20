@@ -76,6 +76,9 @@ namespace te
           te::color::RGBAColor** m_pointPattern;            //!< Represents the pattern to draw a point
           te::se::Mark*          m_pointMark;               //!< Represents the mark of a point
 
+          te::color::RGBAColor** m_arrowPattern;            //!< Represents the pattern to draw a point
+          te::se::Mark*          m_arrowMark;               //!< Represents the mark of a point
+
         };
 
         class FlowNetworkRendererFactory : public te::map::RendererFactory

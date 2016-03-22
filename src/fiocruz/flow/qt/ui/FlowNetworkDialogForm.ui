@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>678</width>
-    <height>605</height>
+    <width>680</width>
+    <height>607</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -79,7 +79,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QComboBox" name="m_tabularLayerComboBox">
+           <widget class="QComboBox" name="m_flowLayerComboBox">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -105,7 +105,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QComboBox" name="m_tabularOriginComboBox">
+           <widget class="QComboBox" name="m_flowOriginComboBox">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -131,7 +131,7 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QComboBox" name="m_tabularDestinyComboBox">
+           <widget class="QComboBox" name="m_flowDestinyComboBox">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -151,7 +151,7 @@
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QComboBox" name="m_tabularWeightComboBox"/>
+           <widget class="QComboBox" name="m_flowWeightComboBox"/>
           </item>
          </layout>
         </item>
@@ -168,7 +168,7 @@
        </property>
        <layout class="QGridLayout" name="gridLayout_26">
         <item row="0" column="0">
-         <widget class="QTabWidget" name="tabWidget">
+         <widget class="QTabWidget" name="m_dominanceTabWidget">
           <property name="currentIndex">
            <number>0</number>
           </property>
@@ -308,7 +308,7 @@
               <item row="0" column="1">
                <layout class="QGridLayout" name="gridLayout_20">
                 <item row="0" column="0">
-                 <widget class="QComboBox" name="m_tabularLayerComboBox_2">
+                 <widget class="QComboBox" name="m_tabularLayerComboBox">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -324,7 +324,7 @@
                  </widget>
                 </item>
                 <item row="1" column="0">
-                 <widget class="QComboBox" name="m_tabularOriginComboBox_2">
+                 <widget class="QComboBox" name="m_tabularOriginComboBox">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -334,7 +334,7 @@
                  </widget>
                 </item>
                 <item row="2" column="0">
-                 <widget class="QComboBox" name="m_tabularDestinyComboBox_2">
+                 <widget class="QComboBox" name="m_tabularDestinyComboBox">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
@@ -347,7 +347,7 @@
                  </widget>
                 </item>
                 <item row="3" column="0">
-                 <widget class="QComboBox" name="m_tabularWeightComboBox_2"/>
+                 <widget class="QComboBox" name="m_tabularWeightComboBox"/>
                 </item>
                </layout>
               </item>
@@ -363,14 +363,17 @@
             <item row="0" column="0">
              <layout class="QGridLayout" name="gridLayout_24">
               <item row="0" column="0">
-               <widget class="QRadioButton" name="radioButton">
+               <widget class="QRadioButton" name="m_calculateOutputRadioButton">
                 <property name="text">
                  <string>Output Flow</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QRadioButton" name="radioButton_2">
+               <widget class="QRadioButton" name="m_calculateInputRadioButton">
                 <property name="text">
                  <string>Input Flow</string>
                 </property>
@@ -410,7 +413,7 @@
             <item row="0" column="0">
              <layout class="QGridLayout" name="gridLayout_14">
               <item row="0" column="0">
-               <widget class="QCheckBox" name="checkBox_3">
+               <widget class="QCheckBox" name="m_domRelLocalCheckBox">
                 <property name="text">
                  <string>Verify Local Flow:</string>
                 </property>
@@ -433,7 +436,7 @@
               <item row="0" column="0">
                <layout class="QGridLayout" name="gridLayout_12">
                 <item row="0" column="0">
-                 <widget class="QLineEdit" name="lineEdit_2">
+                 <widget class="QLineEdit" name="m_domRelLocalLineEdit">
                   <property name="enabled">
                    <bool>false</bool>
                   </property>
@@ -466,7 +469,7 @@
               <item row="1" column="0">
                <layout class="QGridLayout" name="gridLayout_13">
                 <item row="0" column="0">
-                 <widget class="QLineEdit" name="lineEdit_3">
+                 <widget class="QLineEdit" name="m_domRelOthersLineEdit">
                   <property name="maximumSize">
                    <size>
                     <width>30</width>
@@ -548,7 +551,7 @@
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QLineEdit" name="lineEdit"/>
+               <widget class="QLineEdit" name="m_outputColumnLineEdit"/>
               </item>
              </layout>
             </item>
@@ -571,7 +574,7 @@
             <item row="0" column="2">
              <layout class="QGridLayout" name="gridLayout_2">
               <item row="0" column="0">
-               <widget class="QCheckBox" name="checkBox">
+               <widget class="QCheckBox" name="m_outputStatisticsCheckBox">
                 <property name="layoutDirection">
                  <enum>Qt::RightToLeft</enum>
                 </property>
@@ -581,7 +584,7 @@
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QCheckBox" name="checkBox_2">
+               <widget class="QCheckBox" name="m_outputTreeLevelsCheckBox">
                 <property name="layoutDirection">
                  <enum>Qt::RightToLeft</enum>
                 </property>
@@ -732,28 +735,28 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>m_tabularLayerComboBox</tabstop>
-  <tabstop>m_tabularOriginComboBox</tabstop>
-  <tabstop>m_tabularDestinyComboBox</tabstop>
-  <tabstop>m_tabularWeightComboBox</tabstop>
-  <tabstop>tabWidget</tabstop>
+  <tabstop>m_flowLayerComboBox</tabstop>
+  <tabstop>m_flowOriginComboBox</tabstop>
+  <tabstop>m_flowDestinyComboBox</tabstop>
+  <tabstop>m_flowWeightComboBox</tabstop>
+  <tabstop>m_dominanceTabWidget</tabstop>
   <tabstop>m_spatialLayerComboBox</tabstop>
   <tabstop>m_spatialPropertyIdxComboBox</tabstop>
   <tabstop>m_spatialPropertyNameComboBox</tabstop>
-  <tabstop>m_tabularLayerComboBox_2</tabstop>
+  <tabstop>m_tabularLayerComboBox</tabstop>
   <tabstop>radioButton_3</tabstop>
-  <tabstop>m_tabularOriginComboBox_2</tabstop>
+  <tabstop>m_tabularOriginComboBox</tabstop>
   <tabstop>radioButton_4</tabstop>
-  <tabstop>m_tabularDestinyComboBox_2</tabstop>
-  <tabstop>m_tabularWeightComboBox_2</tabstop>
-  <tabstop>radioButton</tabstop>
-  <tabstop>radioButton_2</tabstop>
-  <tabstop>checkBox_3</tabstop>
-  <tabstop>lineEdit_2</tabstop>
-  <tabstop>lineEdit_3</tabstop>
-  <tabstop>lineEdit</tabstop>
-  <tabstop>checkBox</tabstop>
-  <tabstop>checkBox_2</tabstop>
+  <tabstop>m_tabularDestinyComboBox</tabstop>
+  <tabstop>m_tabularWeightComboBox</tabstop>
+  <tabstop>m_calculateOutputRadioButton</tabstop>
+  <tabstop>m_calculateInputRadioButton</tabstop>
+  <tabstop>m_domRelLocalCheckBox</tabstop>
+  <tabstop>m_domRelLocalLineEdit</tabstop>
+  <tabstop>m_domRelOthersLineEdit</tabstop>
+  <tabstop>m_outputColumnLineEdit</tabstop>
+  <tabstop>m_outputStatisticsCheckBox</tabstop>
+  <tabstop>m_outputTreeLevelsCheckBox</tabstop>
   <tabstop>m_repositoryLineEdit</tabstop>
   <tabstop>m_targetFileToolButton</tabstop>
   <tabstop>m_targetDatasourceToolButton</tabstop>
@@ -767,7 +770,7 @@
   <connection>
    <sender>radioButton_3</sender>
    <signal>toggled(bool)</signal>
-   <receiver>m_tabularOriginComboBox_2</receiver>
+   <receiver>m_tabularOriginComboBox</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -783,7 +786,7 @@
   <connection>
    <sender>radioButton_4</sender>
    <signal>toggled(bool)</signal>
-   <receiver>m_tabularDestinyComboBox_2</receiver>
+   <receiver>m_tabularDestinyComboBox</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -797,9 +800,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>checkBox_3</sender>
+   <sender>m_domRelLocalCheckBox</sender>
    <signal>toggled(bool)</signal>
-   <receiver>lineEdit_2</receiver>
+   <receiver>m_domRelLocalLineEdit</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">

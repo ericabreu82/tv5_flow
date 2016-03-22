@@ -27,6 +27,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #define __FIOCRUZ_INTERNAL_FLOW_FLOWNETWORKDIALOG_H
 
 // TerraLib
+#include <terralib/dataaccess/datasource/DataSourceInfo.h>
 #include <terralib/maptools/AbstractLayer.h>
 #include "../../Config.h"
 
@@ -65,10 +66,29 @@ namespace te
 
           void setLayerList(std::list<te::map::AbstractLayerPtr> list);
 
+          te::map::AbstractLayerPtr getOutputLayer();
+
+        public slots:
+
+          void onFlowLayerComboBoxActivated(int index);
+
+          void onSpatialLayerComboBoxActivated(int index);
+
+          void onTabularLayerComboBoxActivated(int index);
+
+          void onTargetDatasourceToolButtonPressed();
+
+          void onTargetFileToolButtonPressed();
+
+          void onOkPushButtonClicked();
+
         private:
 
           std::auto_ptr<Ui::FlowNetworkDialogForm> m_ui;
 
+          te::da::DataSourceInfoPtr m_outputDatasource;
+          
+          te::map::AbstractLayerPtr m_outputLayer;
         };
       }   // end namespace fiocruz
     }     // end namespace plugins

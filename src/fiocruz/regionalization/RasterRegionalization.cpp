@@ -34,8 +34,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/datatype/SimpleData.h>
 #include <terralib/datatype/StringProperty.h>
 #include <terralib/geometry/GeometryProperty.h>
+#include <terralib/geometry/MultiPolygon.h>
 #include <terralib/memory/DataSet.h>
 #include <terralib/memory/DataSetItem.h>
+#include <terralib/raster/Utils.h>
+#include <terralib/vp/Utils.h>
 
 
 
@@ -97,6 +100,7 @@ bool te::qt::plugins::fiocruz::RasterRegionalization::generate(std::vector<std::
     std::string currentDestiny = m_inputParams->m_objects[i];
 
     std::string fileName = path + "/" + baseName + "_" + currentDestiny + ".tif";
+    std::string tempFileName = path + "/" + baseName + "_" + currentDestiny + "_temp_file.tif";
 
     rastersPath.push_back(fileName);
 
@@ -120,6 +124,15 @@ bool te::qt::plugins::fiocruz::RasterRegionalization::generate(std::vector<std::
     int band = 0;
 
     RasterInterpolate(ocurrencies, outputRaster, band, algorithm, kernelFunction, numberOfNeighbours, boxRatio);
+
+    //te::gm::Geometry* geometry = unitePolygonsFromDataSet(vecDataDriver);
+    //te::gm::MultiPolygon* multiPolygon = dynamic_cast<te::gm::MultiPolygon*>(geometry);
+  
+
+    //te::gm::Geometry* geometry = te::vp::VerifyGeometryRepresentation(geometry, te::gm::GeomType::MultiPolygonType);
+
+    //std::map<std::string, std::string> rInfo;
+    //te::rst::RasterPtr rasterPtr = te::rst::CropRaster(*outputRaster, polygon, rInfo);
 
     rasters.push_back(outputRaster);
   }

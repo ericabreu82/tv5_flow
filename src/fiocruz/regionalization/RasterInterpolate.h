@@ -33,6 +33,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 namespace te
 {
+  namespace gm
+  {
+    class Geometry;
+  }
+
   namespace rst
   {
     class Raster;
@@ -54,6 +59,7 @@ namespace te
         Ocurrencies GetOcurrencies(const ComplexDataSet& ocurrenciesDataDriver, const std::string& destinyIdColumnName, const std::string& xColumnName, const std::string& yColumnName, const std::string& destinyIdFilter);
         Ocurrencies GetOcurrencies(const ComplexDataSet& ocurrenciesDataDriver, const std::string& destinyIdColumnName, const std::string& originLinkColumnName, const ComplexDataSet& originDataDriver, const std::string& originIdColumnName, const std::string& destinyIdFilter);
 
+        te::gm::Geometry* unitePolygonsFromDataSet(const ComplexDataSet& complexDataSet);
 
         //! Builds a KDTree from a theme with samples: the theme must have a point representation
         /*

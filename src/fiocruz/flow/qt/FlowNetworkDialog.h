@@ -72,9 +72,7 @@ namespace te
 
           void onFlowLayerComboBoxActivated(int index);
 
-          void onSpatialLayerComboBoxActivated(int index);
-
-          void onTabularLayerComboBoxActivated(int index);
+          void onDomLayerComboBoxActivated(int index);
 
           void onTargetDatasourceToolButtonPressed();
 

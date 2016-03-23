@@ -24,6 +24,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 #include "../FlowGraphImport.h"
+#include "../FlowDominance.h"
 #include "FlowNetworkDialog.h"
 #include "ui_FlowNetworkDialogForm.h"
 
@@ -32,7 +33,6 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/dataaccess/utils/Utils.h>
 #include <terralib/qt/widgets/datasource/selector/DataSourceSelectorDialog.h>
 #include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
-
 
 // Qt
 #include <QMessageBox>
@@ -57,8 +57,7 @@ m_ui(new Ui::FlowNetworkDialogForm)
 
   //connects
   connect(m_ui->m_flowLayerComboBox, SIGNAL(activated(int)), this, SLOT(onFlowLayerComboBoxActivated(int)));
-  connect(m_ui->m_spatialLayerComboBox, SIGNAL(activated(int)), this, SLOT(onSpatialLayerComboBoxActivated(int)));
-  connect(m_ui->m_tabularLayerComboBox, SIGNAL(activated(int)), this, SLOT(onTabularLayerComboBoxActivated(int)));
+  connect(m_ui->m_domLayerComboBox, SIGNAL(activated(int)), this, SLOT(onDomLayerComboBoxActivated(int)));
   connect(m_ui->m_targetDatasourceToolButton, SIGNAL(pressed()), this, SLOT(onTargetDatasourceToolButtonPressed()));
   connect(m_ui->m_targetFileToolButton, SIGNAL(pressed()), this, SLOT(onTargetFileToolButtonPressed()));
   connect(m_ui->m_okPushButton, SIGNAL(released()), this, SLOT(onOkPushButtonClicked()));
@@ -73,9 +72,8 @@ te::qt::plugins::fiocruz::FlowNetworkDialog::~FlowNetworkDialog()
 void te::qt::plugins::fiocruz::FlowNetworkDialog::setLayerList(std::list<te::map::AbstractLayerPtr> list)
 {
   m_ui->m_flowLayerComboBox->clear();
-  m_ui->m_spatialLayerComboBox->clear();
-  m_ui->m_tabularLayerComboBox->clear();
-
+  m_ui->m_domLayerComboBox->clear();
+  
   //set layers into combo box
   std::list<te::map::AbstractLayerPtr>::iterator it = list.begin();
 
@@ -85,14 +83,11 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::setLayerList(std::list<te::map
 
     std::auto_ptr<te::da::DataSetType> dsType = l->getSchema();
 
-    if (dsType->hasGeom())
+    if (!dsType->hasRaster())
     {
       m_ui->m_flowLayerComboBox->addItem(l->getTitle().c_str(), QVariant::fromValue(l));
-      m_ui->m_spatialLayerComboBox->addItem(l->getTitle().c_str(), QVariant::fromValue(l));
+      m_ui->m_domLayerComboBox->addItem(l->getTitle().c_str(), QVariant::fromValue(l));
     }
-
-    if (!dsType->hasRaster())
-      m_ui->m_tabularLayerComboBox->addItem(l->getTitle().c_str(), QVariant::fromValue(l));
 
     ++it;
   }
@@ -100,11 +95,8 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::setLayerList(std::list<te::map
   if (m_ui->m_flowLayerComboBox->count() > 0)
     onFlowLayerComboBoxActivated(0);
 
-  if (m_ui->m_spatialLayerComboBox->count() > 0)
-    onSpatialLayerComboBoxActivated(0);
-
-  if (m_ui->m_tabularLayerComboBox->count() > 0)
-    onTabularLayerComboBoxActivated(0);
+  if (m_ui->m_domLayerComboBox->count() > 0)
+    onDomLayerComboBoxActivated(0);
 }
 
 te::map::AbstractLayerPtr te::qt::plugins::fiocruz::FlowNetworkDialog::getOutputLayer()
@@ -121,7 +113,20 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
     return;
   }
 
-  //load dominance info
+  //check input dominance parameters
+  if (m_ui->m_domLayerRadioButton->isChecked())
+  {
+    if (m_ui->m_domLayerComboBox->currentText().isEmpty())
+    {
+      QMessageBox::warning(this, tr("Warning"), tr("Dominance Layer not selected."));
+      return;
+    }
+  }
+  else if (!m_ui->m_domCalcRadioButton->isChecked() && !m_ui->m_domLayerRadioButton->isChecked())
+  {
+    QMessageBox::warning(this, tr("Warning"), tr("Dominance type not defined."));
+    return;
+  }
 
   //load graph
   QVariant flowVarLayer = m_ui->m_flowLayerComboBox->currentData(Qt::UserRole);
@@ -143,8 +148,38 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
   }
   catch (...)
   {
+    QMessageBox::warning(this, tr("Warning"), tr("Internal error loading graph from Layer."));
     return;
   }
+
+  //calculate dominance
+  te::qt::plugins::fiocruz::FlowDominance fd;
+
+  if (m_ui->m_domLayerRadioButton->isChecked())
+  {
+    QVariant varLayer = m_ui->m_domLayerComboBox->currentData(Qt::UserRole);
+    te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
+    std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
+    te::da::DataSourcePtr ds = te::da::GetDataSource(layer->getDataSourceId());
+    std::string dataSetName = dsType->getName();
+
+    int linkColumnIdx = m_ui->m_domPropertyIdxComboBox->currentData().toInt();
+    int domColumnIdx = m_ui->m_domPropertyNameComboBox->currentData().toInt();
+
+    fd.associate(graph, ds, dataSetName, linkColumnIdx, domColumnIdx);
+  }
+  else if (m_ui->m_domCalcRadioButton->isChecked())
+  {
+    te::qt::plugins::fiocruz::DominanceType dt;
+
+    if (m_ui->m_calculateOutputRadioButton->isChecked())
+      dt = te::qt::plugins::fiocruz::DOMINANCE_OUTPUTFLOW;
+    else if (m_ui->m_calculateInputRadioButton->isChecked())
+      dt = te::qt::plugins::fiocruz::DOMINANCE_INPUTFLOW;
+
+    fd.calculate(graph, dt);
+  }
+
 
   int a = 0;
 }
@@ -175,14 +210,14 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onFlowLayerComboBoxActivated(i
   }
 }
 
-void te::qt::plugins::fiocruz::FlowNetworkDialog::onSpatialLayerComboBoxActivated(int index)
+void te::qt::plugins::fiocruz::FlowNetworkDialog::onDomLayerComboBoxActivated(int index)
 {
-  QVariant varLayer = m_ui->m_spatialLayerComboBox->itemData(index, Qt::UserRole);
+  QVariant varLayer = m_ui->m_domLayerComboBox->itemData(index, Qt::UserRole);
 
   te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
 
-  m_ui->m_spatialPropertyIdxComboBox->clear();
-  m_ui->m_spatialPropertyNameComboBox->clear();
+  m_ui->m_domPropertyIdxComboBox->clear();
+  m_ui->m_domPropertyNameComboBox->clear();
 
   //set properties from spatial layer into referency property combo
   std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
@@ -193,34 +228,8 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onSpatialLayerComboBoxActivate
 
     if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::INT64_TYPE || prop->getType() == te::dt::STRING_TYPE)
     {
-      m_ui->m_spatialPropertyIdxComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
-      m_ui->m_spatialPropertyNameComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
-    }
-  }
-}
-
-void te::qt::plugins::fiocruz::FlowNetworkDialog::onTabularLayerComboBoxActivated(int index)
-{
-  QVariant varLayer = m_ui->m_tabularLayerComboBox->itemData(index, Qt::UserRole);
-
-  te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
-
-  m_ui->m_tabularOriginComboBox->clear();
-  m_ui->m_tabularDestinyComboBox->clear();
-  m_ui->m_tabularWeightComboBox->clear();
-
-  //set properties from tabular layer into combos
-  std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
-
-  for (std::size_t t = 0; t < dsType->getProperties().size(); ++t)
-  {
-    te::dt::Property* prop = dsType->getProperties()[t];
-
-    if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::STRING_TYPE)
-    {
-      m_ui->m_tabularOriginComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
-      m_ui->m_tabularDestinyComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
-      m_ui->m_tabularWeightComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+      m_ui->m_domPropertyIdxComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+      m_ui->m_domPropertyNameComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
     }
   }
 }

@@ -42,6 +42,11 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 namespace te
 {
+  namespace gm
+  {
+    class MultiPolygon;
+  }
+
   namespace qt
   {
     namespace plugins
@@ -49,6 +54,8 @@ namespace te
       namespace fiocruz
       {
         te::rst::Raster* CreateRaster(const std::string& fileName, te::gm::Envelope* envelope, double resX, double resY, int srid, int type = te::dt::DOUBLE_TYPE);
+
+        te::rst::Raster* ClipRaster(te::rst::Raster* inputRaster, te::gm::MultiPolygon* geom, const std::string& outputFileName);
 
         std::vector<te::map::AbstractLayerPtr> CreateRasterIndividualMaps(std::vector<std::string> rastersPath, std::auto_ptr<te::color::ColorBar> cb, int slices = 20, int prec = 15);
 

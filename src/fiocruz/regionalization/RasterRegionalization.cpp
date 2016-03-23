@@ -95,14 +95,19 @@ bool te::qt::plugins::fiocruz::RasterRegionalization::generate(std::vector<std::
   std::string path = m_outputParams->m_path;
   std::string baseName = m_outputParams->m_baseName;
 
+  std::auto_ptr<te::gm::Geometry> geometry(unitePolygonsFromDataSet(vecDataDriver));
+  te::gm::MultiPolygon* multiPolygon = dynamic_cast<te::gm::MultiPolygon*>(geometry.get());
+  if (multiPolygon != 0)
+  {
+    return false;
+  }
+
   for (size_t i = 0; i < m_inputParams->m_objects.size(); ++i)
   {
     std::string currentDestiny = m_inputParams->m_objects[i];
 
     std::string fileName = path + "/" + baseName + "_" + currentDestiny + ".tif";
     std::string tempFileName = path + "/" + baseName + "_" + currentDestiny + "_temp_file.tif";
-
-    rastersPath.push_back(fileName);
 
     //read the ocurrencies
     Ocurrencies ocurrencies;
@@ -119,22 +124,15 @@ bool te::qt::plugins::fiocruz::RasterRegionalization::generate(std::vector<std::
     //criar raster
     te::gm::Envelope* envelope = m_inputParams->m_iVectorDataSet->getExtent(geomColumnPos).release();
 
-    te::rst::Raster* outputRaster = te::qt::plugins::fiocruz::CreateRaster(fileName, envelope, resX, resY, srid);
+    std::auto_ptr<te::rst::Raster> outputRaster(te::qt::plugins::fiocruz::CreateRaster(tempFileName, envelope, resX, resY, srid));
 
     int band = 0;
+    RasterInterpolate(ocurrencies, outputRaster.get(), band, algorithm, kernelFunction, numberOfNeighbours, boxRatio);
 
-    RasterInterpolate(ocurrencies, outputRaster, band, algorithm, kernelFunction, numberOfNeighbours, boxRatio);
+    outputRaster.reset(te::qt::plugins::fiocruz::ClipRaster(outputRaster.get(), multiPolygon, fileName));
 
-    //te::gm::Geometry* geometry = unitePolygonsFromDataSet(vecDataDriver);
-    //te::gm::MultiPolygon* multiPolygon = dynamic_cast<te::gm::MultiPolygon*>(geometry);
-  
-
-    //te::gm::Geometry* geometry = te::vp::VerifyGeometryRepresentation(geometry, te::gm::GeomType::MultiPolygonType);
-
-    //std::map<std::string, std::string> rInfo;
-    //te::rst::RasterPtr rasterPtr = te::rst::CropRaster(*outputRaster, polygon, rInfo);
-
-    rasters.push_back(outputRaster);
+    rastersPath.push_back(fileName);
+    rasters.push_back(outputRaster.release());
   }
 
   return true;

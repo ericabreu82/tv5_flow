@@ -31,6 +31,9 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/dataaccess/datasource/DataSourceInfo.h>
 #include <terralib/dataaccess/datasource/DataSourceInfoManager.h>
 #include <terralib/dataaccess/datasource/DataSourceManager.h>
+#include <terralib/geometry/Geometry.h>
+#include <terralib/geometry/MultiPolygon.h>
+#include <terralib/geometry/Polygon.h>
 #include <terralib/dataaccess/utils/Utils.h>
 #include <terralib/maptools/Grouping.h>
 #include <terralib/maptools/GroupingAlgorithms.h>
@@ -38,6 +41,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/maptools/Utils.h>
 #include <terralib/raster/BandProperty.h>
 #include <terralib/raster/Grid.h>
+#include <terralib/raster/PositionIterator.h>
 #include <terralib/raster/Raster.h>
 #include <terralib/raster/RasterFactory.h>
 #include <terralib/raster/RasterSummary.h>
@@ -80,6 +84,74 @@ te::rst::Raster* te::qt::plugins::fiocruz::CreateRaster(const std::string& fileN
   te::rst::FillRaster(raster, bProp->m_noDataValue);
 
   return raster;
+}
+
+te::rst::Raster* te::qt::plugins::fiocruz::ClipRaster(te::rst::Raster* inputRaster, te::gm::MultiPolygon* geom, const std::string& outputFileName)
+{
+  assert(inputRaster);
+  assert(geom);
+
+  std::map<std::string, std::string> connInfo;
+  connInfo["URI"] = outputFileName;
+
+  te::gm::Envelope* envelopeCopy = new te::gm::Envelope(*inputRaster->getGrid()->getExtent());
+
+  te::rst::Grid* grid = new te::rst::Grid(inputRaster->getGrid()->getResolutionX(), inputRaster->getGrid()->getResolutionY(), envelopeCopy, inputRaster->getGrid()->getSRID());
+  te::rst::BandProperty* bProp = new te::rst::BandProperty(0, inputRaster->getBand(0)->getProperty()->getType(), "");
+  bProp->m_noDataValue = inputRaster->getBand(0)->getProperty()->m_noDataValue;
+
+  std::vector<te::rst::BandProperty*> vecBandProp;
+  vecBandProp.push_back(bProp);
+
+  te::rst::Raster* outputRaster = te::rst::RasterFactory::make("GDAL", grid, vecBandProp, connInfo);
+
+  assert(outputRaster);
+
+  te::rst::FillRaster(outputRaster, bProp->m_noDataValue);
+
+  te::gm::Polygon* polygon = 0;
+  std::vector<double> doubleVec;
+  te::gm::Coord2D inputCoord;
+  te::gm::Coord2D outputCoord;
+
+  for (std::size_t i = 0; i < geom->getNumGeometries(); ++i)
+  {
+    polygon = static_cast<te::gm::Polygon*> (geom->getGeometryN(i));
+
+    te::rst::PolygonIterator<double> it = te::rst::PolygonIterator<double>::begin(inputRaster, polygon);
+    te::rst::PolygonIterator<double> itend = te::rst::PolygonIterator<double>::end(inputRaster, polygon);
+
+    while (it != itend)
+    {
+      inputRaster->getValues(it.getColumn(), it.getRow(), doubleVec);
+
+      inputCoord = inputRaster->getGrid()->gridToGeo(it.getColumn(), it.getRow());
+      outputCoord = outputRaster->getGrid()->geoToGrid(inputCoord.x, inputCoord.y);
+      outputCoord.x = te::rst::Round(outputCoord.x);
+      outputCoord.y = te::rst::Round(outputCoord.y);
+
+      if (
+        (
+        (outputCoord.x >= 0)
+        &&
+        (outputCoord.x < (int)outputRaster->getNumberOfColumns())
+        )
+        &&
+        (
+        (outputCoord.y >= 0)
+        &&
+        (outputCoord.y < (int)outputRaster->getNumberOfRows())
+        )
+        )
+      {
+        outputRaster->setValues(outputCoord.x, outputCoord.y, doubleVec);
+      }
+
+      ++it;
+    }
+  }
+
+  return outputRaster;
 }
 
 std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::CreateRasterIndividualMaps(std::vector<std::string> rastersPath, std::auto_ptr<te::color::ColorBar> cb, int slices, int prec)

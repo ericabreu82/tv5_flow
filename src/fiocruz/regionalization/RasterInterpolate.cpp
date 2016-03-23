@@ -190,6 +190,34 @@ te::qt::plugins::fiocruz::Ocurrencies te::qt::plugins::fiocruz::GetOcurrencies(c
   return ocurrencies;
 }
 
+te::gm::Geometry* te::qt::plugins::fiocruz::unitePolygonsFromDataSet(const ComplexDataSet& complexDataSet)
+{
+  te::da::DataSet* dataSet = complexDataSet.getDataSet();
+  te::da::DataSetType* dataSetType = complexDataSet.getDataSetType();
+
+  te::gm::GeometryProperty* geometryProperty = te::da::GetFirstGeomProperty(dataSetType);
+  te::gm::GeomType geomType = geometryProperty->getGeometryType();
+
+  std::auto_ptr<te::gm::Geometry> outputGeometry;
+
+  bool isFirst = true;
+  dataSet->moveBeforeFirst();
+  while (dataSet->moveNext())
+  {
+    std::auto_ptr<te::gm::Geometry> geometry = dataSet->getGeometry(geometryProperty->getName());
+    if (isFirst == true)
+    {
+      outputGeometry = geometry;
+      isFirst = false;
+      continue;
+    }
+
+    outputGeometry.reset(outputGeometry->Union(geometry.get()));
+  }
+
+  return outputGeometry.release();
+}
+
 bool te::qt::plugins::fiocruz::BuildKDTree(const Ocurrencies& ocurrencies, KernelInterpolationAlgorithms::KD_ADAPTATIVE_TREE& tree)
 {
   if (ocurrencies.empty() == true)

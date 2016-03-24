@@ -91,23 +91,15 @@ te::rst::Raster* te::qt::plugins::fiocruz::ClipRaster(te::rst::Raster* inputRast
   assert(inputRaster);
   assert(geom);
 
-  std::map<std::string, std::string> connInfo;
-  connInfo["URI"] = outputFileName;
-
+  int type = inputRaster->getBandDataType(0);
+  int srid = inputRaster->getGrid()->getSRID();
+  double resX = inputRaster->getGrid()->getResolutionX();
+  double resY = inputRaster->getGrid()->getResolutionY();
   te::gm::Envelope* envelopeCopy = new te::gm::Envelope(*inputRaster->getGrid()->getExtent());
 
-  te::rst::Grid* grid = new te::rst::Grid(inputRaster->getGrid()->getResolutionX(), inputRaster->getGrid()->getResolutionY(), envelopeCopy, inputRaster->getGrid()->getSRID());
-  te::rst::BandProperty* bProp = new te::rst::BandProperty(0, inputRaster->getBand(0)->getProperty()->getType(), "");
-  bProp->m_noDataValue = inputRaster->getBand(0)->getProperty()->m_noDataValue;
-
-  std::vector<te::rst::BandProperty*> vecBandProp;
-  vecBandProp.push_back(bProp);
-
-  te::rst::Raster* outputRaster = te::rst::RasterFactory::make("GDAL", grid, vecBandProp, connInfo);
-
+  //create the output raster
+  te::rst::Raster* outputRaster = CreateRaster(outputFileName, envelopeCopy, resX, resY, srid, type);
   assert(outputRaster);
-
-  te::rst::FillRaster(outputRaster, bProp->m_noDataValue);
 
   te::gm::Polygon* polygon = 0;
   std::vector<double> doubleVec;

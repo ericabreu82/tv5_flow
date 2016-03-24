@@ -97,7 +97,7 @@ bool te::qt::plugins::fiocruz::RasterRegionalization::generate(std::vector<std::
 
   std::auto_ptr<te::gm::Geometry> geometry(unitePolygonsFromDataSet(vecDataDriver));
   te::gm::MultiPolygon* multiPolygon = dynamic_cast<te::gm::MultiPolygon*>(geometry.get());
-  if (multiPolygon != 0)
+  if (multiPolygon == 0)
   {
     return false;
   }

@@ -62,6 +62,6 @@ void te::qt::plugins::fiocruz::FlowNetworkAction::onActionActivated(bool checked
   if(dlg.exec() == QDialog::Accepted)
   {
     //add new layer
-    //addNewLayer(dlg.getOutputLayer());
+    addNewLayer(dlg.getOutputLayer());
   }
 }

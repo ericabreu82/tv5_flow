@@ -109,11 +109,6 @@ void te::qt::plugins::fiocruz::Plugin::shutdown()
 
 void te::qt::plugins::fiocruz::Plugin::registerActions()
 {
-#ifdef FIOCRUZ_HAVE_FLOWCLASSIFY
-  m_flowClassify = new te::qt::plugins::fiocruz::FlowClassifyAction(m_flowMenu);
-  connect(m_flowClassify, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
-#endif
-
 #ifdef FIOCRUZ_HAVE_FLOWDIAGRAM
   m_flowDiagram = new te::qt::plugins::fiocruz::FlowDiagramAction(m_flowMenu);
   connect(m_flowDiagram, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
@@ -124,6 +119,11 @@ void te::qt::plugins::fiocruz::Plugin::registerActions()
 #ifdef FIOCRUZ_HAVE_FLOWNETWORK
   m_flowNetwork = new te::qt::plugins::fiocruz::FlowNetworkAction(m_flowMenu);
   connect(m_flowNetwork, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
+#endif
+
+#ifdef FIOCRUZ_HAVE_FLOWCLASSIFY
+  m_flowClassify = new te::qt::plugins::fiocruz::FlowClassifyAction(m_flowMenu);
+  connect(m_flowClassify, SIGNAL(triggered(te::qt::af::evt::Event*)), SIGNAL(triggered(te::qt::af::evt::Event*)));
 #endif
 
 #ifdef FIOCRUZ_HAVE_REGIONALIZATIONRASTER

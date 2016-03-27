@@ -27,8 +27,10 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include "FlowGraphImport.h"
 
 //terralib
+#include <terralib/dataaccess/utils/Utils.h>
 #include <terralib/datatype/SimpleData.h>
 #include <terralib/datatype/SimpleProperty.h>
+#include <terralib/datatype/StringProperty.h>
 #include <terralib/geometry/GeometryProperty.h>
 #include <terralib/geometry/MultiLineString.h>
 #include <terralib/graph/Globals.h>
@@ -37,6 +39,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/graph/core/GraphMetadata.h>
 #include <terralib/graph/core/Edge.h>
 #include <terralib/graph/core/Vertex.h>
+#include <terralib/graph/iterator/MemoryIterator.h>
 
 
 te::qt::plugins::fiocruz::FlowGraphImport::FlowGraphImport()
@@ -49,9 +52,16 @@ te::qt::plugins::fiocruz::FlowGraphImport::~FlowGraphImport()
 
 }
 
-te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::importGraph(std::auto_ptr<te::da::DataSet> dataSet, int originIdx, int destinyIdx, int weightIdx, int geomidx)
+te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::importGraph(std::auto_ptr<te::da::DataSet> dataSet, int geomidx, bool addStatisticsColumns)
 {
-  te::graph::AbstractGraph* graph = buildGraph();
+  te::graph::AbstractGraph* graph = buildGraph(addStatisticsColumns);
+
+  int originIdx = te::da::GetPropertyIndex(dataSet.get(), "from");
+  int originNameIdx = te::da::GetPropertyIndex(dataSet.get(), "from_name");
+  int destinyIdx = te::da::GetPropertyIndex(dataSet.get(), "to");
+  int destinyNameIdx = te::da::GetPropertyIndex(dataSet.get(), "to_name");
+  int weightIdx = te::da::GetPropertyIndex(dataSet.get(), "weight");
+  int distIdx = te::da::GetPropertyIndex(dataSet.get(), "distance");
 
   //fill graph
   dataSet->moveBeforeFirst();
@@ -59,8 +69,11 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::importGraph
   while (dataSet->moveNext())
   {
     std::string originId = dataSet->getAsString(originIdx);
+    std::string originName = dataSet->getAsString(originNameIdx);
     std::string destinyId = dataSet->getAsString(destinyIdx);
+    std::string destinyName = dataSet->getAsString(destinyNameIdx);
     std::string weightStr = dataSet->getAsString(weightIdx);
+    std::string distStr = dataSet->getAsString(distIdx);
 
     //get geometry from edge (lineString with 2 coords)
     std::auto_ptr<te::gm::Geometry> geom = dataSet->getGeometry(geomidx);
@@ -109,21 +122,29 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::importGraph
 
         te::graph::Edge* e = new te::graph::Edge(id, vFrom->getId(), vTo->getId());
 
-        e->setAttributeVecSize(3); //from, to, weight
+        e->setAttributeVecSize(6);
 
         e->addAttribute(0, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(vFrom->getId()));
-        e->addAttribute(1, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(vTo->getId()));
-        e->addAttribute(2, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(atoi(weightStr.c_str())));
+        e->addAttribute(1, new te::dt::SimpleData<std::string, te::dt::STRING_TIME>(originName));
+        e->addAttribute(2, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(vTo->getId()));
+        e->addAttribute(3, new te::dt::SimpleData<std::string, te::dt::STRING_TIME>(destinyName));
+        e->addAttribute(4, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(atoi(weightStr.c_str())));
+        e->addAttribute(5, new te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>(atof(distStr.c_str())));
 
         graph->add(e);
       }
     }
   }
 
+  if (addStatisticsColumns)
+  {
+    calculateStatistics(graph);
+  }
+
   return graph;
 }
 
-te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph()
+te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph(bool addStatisticsColumns)
 {
   std::string graphName = "flowGraph";
 
@@ -148,9 +169,51 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph(
 
   graph->addVertexProperty(gProp);
 
+  if (addStatisticsColumns)
+  {
+    // Adiciona o campo com o número de fluxos de entrada
+    {
+      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("flows_in", te::dt::INT32_TYPE);
+      p->setParent(0);
+      p->setId(0);
+      graph->addVertexProperty(p);
+    }
+
+    // Adiciona o campo com o número de fluxos de saída
+    {
+      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("flows_out", te::dt::INT32_TYPE);
+      p->setParent(0);
+      p->setId(0);
+      graph->addVertexProperty(p);
+    }
+
+    // Adiciona o campo com o somatório dos valores dos fluxos de entrada
+    {
+      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("sum_flows_in", te::dt::INT32_TYPE);
+      p->setParent(0);
+      p->setId(0);
+      graph->addVertexProperty(p);
+    }
+
+    // Adiciona o campo com o somatório dos valores dos fluxos de saída
+    {
+      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("sum_flows_out", te::dt::INT32_TYPE);
+      p->setParent(0);
+      p->setId(0);
+      graph->addVertexProperty(p);
+    }
+  }
+
   //create edge attributes
   {//add from property to graph
     te::dt::SimpleProperty* p = new te::dt::SimpleProperty("from", te::dt::INT32_TYPE);
+    p->setParent(0);
+    p->setId(0);
+    graph->addEdgeProperty(p);
+  }
+
+  {//add from alias property to graph
+    te::dt::SimpleProperty* p = new te::dt::StringProperty("from_name");
     p->setParent(0);
     p->setId(0);
     graph->addEdgeProperty(p);
@@ -163,6 +226,13 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph(
     graph->addEdgeProperty(p);
   }
 
+  {//add to alias property to graph
+    te::dt::SimpleProperty* p = new te::dt::StringProperty("to_name");
+    p->setParent(0);
+    p->setId(0);
+    graph->addEdgeProperty(p);
+  }
+
   {//add weight property to graph
     te::dt::SimpleProperty* p = new te::dt::SimpleProperty("weight", te::dt::INT32_TYPE);
     p->setParent(0);
@@ -170,7 +240,98 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph(
     graph->addEdgeProperty(p);
   }
 
+  {//add distance property to graph
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("distance", te::dt::DOUBLE_TYPE);
+    p->setParent(0);
+    p->setId(0);
+    graph->addEdgeProperty(p);
+  }
+
   return graph;
+}
+
+void te::qt::plugins::fiocruz::FlowGraphImport::calculateStatistics(te::graph::AbstractGraph* graph)
+{
+  //fill vertex attrs with default values
+  std::auto_ptr<te::graph::MemoryIterator> memIt(new te::graph::MemoryIterator(graph));
+
+  te::graph::Vertex* vertex = memIt->getFirstVertex();
+
+  int graphVertexAttrSize = graph->getMetadata()->getVertexPropertySize();
+
+  while (vertex)
+  {
+    vertex->setAttributeVecSize(graphVertexAttrSize);
+
+    for (int i = 1; i < graphVertexAttrSize; ++i)
+    {
+      vertex->addAttribute(i, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(0));
+    }
+
+    vertex = memIt->getNextVertex();
+  }
+
+  //calculate statistics
+  vertex = memIt->getFirstVertex();
+
+  int weightAttrIdx = getEdgeAttrIdx(graph, "weight");
+
+  while (vertex)
+  {
+    // Adiciona o campo com o número de fluxos de entrada
+    vertex->addAttribute(1, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(vertex->getPredecessors().size()));
+
+    // Adiciona o campo com o número de fluxos de saída
+    vertex->addAttribute(2, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(vertex->getSuccessors().size()));
+
+    // Adiciona o campo com o somatório dos valores dos fluxos de entrada
+    int sumFlowIn = calculateWeightSum(graph, weightAttrIdx, vertex->getPredecessors());
+    vertex->addAttribute(3, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(sumFlowIn));
+
+    // Adiciona o campo com o somatório dos valores dos fluxos de saída
+    int sumFlowOut = calculateWeightSum(graph, weightAttrIdx, vertex->getSuccessors());
+    vertex->addAttribute(4, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(sumFlowOut));
+
+    vertex = memIt->getNextVertex();
+  }
+
+}
+
+int te::qt::plugins::fiocruz::FlowGraphImport::calculateWeightSum(te::graph::AbstractGraph* graph, int weighAttrIdx, std::set<int> edges)
+{
+  int count = 0;
+
+  std::set<int>::iterator it = edges.begin();
+
+  for (it = edges.begin(); it != edges.end(); ++it)
+  {
+    te::graph::Edge* e = graph->getEdge(*it);
+
+    if (e)
+    {
+      std::string weightStr = e->getAttributes()[weighAttrIdx]->toString();
+
+      count += atoi(weightStr.c_str());
+    }
+  }
+
+  return count;
+}
+
+int te::qt::plugins::fiocruz::FlowGraphImport::getEdgeAttrIdx(te::graph::AbstractGraph* graph, std::string attrName)
+{
+  int idx = -1;
+
+  for (int i = 0; i < graph->getEdgePropertySize(); ++i)
+  {
+    if (graph->getEdgeProperty(i)->getName() == attrName)
+    {
+      idx = i;
+      break;
+    }
+  }
+
+  return idx;
 }
 
 te::gm::LineString* te::qt::plugins::fiocruz::FlowGraphImport::getLine(te::gm::Geometry* geom)

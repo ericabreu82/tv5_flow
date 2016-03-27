@@ -70,8 +70,6 @@ namespace te
 
         public slots:
 
-          void onFlowLayerComboBoxActivated(int index);
-
           void onDomLayerComboBoxActivated(int index);
 
           void onTargetDatasourceToolButtonPressed();

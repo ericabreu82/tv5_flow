@@ -18,19 +18,17 @@ TerraLib Team at <terralib-team@terralib.org>.
 */
 
 /*!
-\file fiocruz/src/fiocruz/flow/FlowGraphImport.h
+\file fiocruz/src/fiocruz/flow/CalculateMainFlow.h
 
-\brief This file defines the Flow Graph Import class
+\brief This file defines the CalulateMainFlow class
 */
 
-#ifndef __FIOCRUZ_INTERNAL_FLOW_FLOWGRAPHIMPORT_H
-#define __FIOCRUZ_INTERNAL_FLOW_FLOWGRAPHIMPORT_H
+#ifndef __FIOCRUZ_INTERNAL_FLOW_CALCULATEMAINFLOW_H
+#define __FIOCRUZ_INTERNAL_FLOW_CALCULATEMAINFLOW_H
 
 // TerraLib
-#include <terralib/dataaccess/datasource/DataSource.h>
-#include <terralib/geometry/LineString.h>
 #include <terralib/graph/core/AbstractGraph.h>
-#include <terralib/memory/DataSet.h>
+#include <terralib/graph/graphs/BidirectionalGraph.h>
 
 #include "../Config.h"
 
@@ -46,46 +44,38 @@ namespace te
       namespace fiocruz
       {
         /*!
-        \class FlowGraphImport
+        \class CalculateMainFlow
 
-        \brief This class is used to Import a graph to a datasource
+        \brief This class is used calculate the main flow of graph
         */
-        class FlowGraphImport
+        class CalculateMainFlow
         {
 
           public:
 
-            FlowGraphImport();
+            CalculateMainFlow();
 
-            ~FlowGraphImport();
+            ~CalculateMainFlow();
 
           public:
 
-            te::graph::AbstractGraph* importGraph(std::auto_ptr<te::da::DataSet> dataSet, int geomidx, bool addStatisticsColumns);
+            void calculate(te::graph::BidirectionalGraph* biGraph, const double& dominanceRelation, const bool& checkLocalDominance, const double& localDominanceValue, bool addStatisticsColumns);
 
           protected:
 
-            te::graph::AbstractGraph* buildGraph(bool addStatisticsColumns);
-
-            void calculateStatistics(te::graph::AbstractGraph* graph);
-
-            int calculateWeightSum(te::graph::AbstractGraph* graph, int weighAttrIdx, std::set<int> edges);
+            void buildGraph(te::graph::BidirectionalGraph* biGraph, bool addStatisticsColumns);
 
             int getEdgeAttrIdx(te::graph::AbstractGraph* graph, std::string attrName);
 
-            te::gm::LineString* getLine(te::gm::Geometry* geom);
+            int getEdgeWeightAttrValue(te::graph::Edge* e, int attrIdx);
 
-            /*!
-            \brief Function used to generated the edge id
+            te::graph::Edge* getHighWeightEdge(te::graph::BidirectionalGraph* biGraph, std::vector<te::graph::Edge*> edgeVec);
 
-            \return Integer value as ID
+            std::vector<int> getRoots(te::graph::AbstractGraph* graph);
 
-            */
-            int getEdgeId();
+            void buildLevel(std::vector<int> roots);
 
-          protected:
-
-            int m_edgeId;  //!< Attribute used as a index counter for edge objects
+            void buildLevel(te::graph::Vertex* vertex, int level);
 
         };
       }   // end namespace fiocruz
@@ -93,5 +83,5 @@ namespace te
   }       // end namespace qt
 }         // end namespace te
 
-#endif  // __FIOCRUZ_INTERNAL_FLOW_FLOWGRAPHIMPORT_H
+#endif  // __FIOCRUZ_INTERNAL_FLOW_CALCULATEMAINFLOW_H
 

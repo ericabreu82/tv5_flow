@@ -91,7 +91,7 @@ void te::qt::plugins::fiocruz::FlowDominance::calculate(te::graph::AbstractGraph
     return;
 
   //get iterator
-  te::graph::MemoryIterator* iterator = new te::graph::MemoryIterator(biGraph);
+  std::auto_ptr<te::graph::MemoryIterator> iterator(new te::graph::MemoryIterator(biGraph));
 
   te::graph::Vertex* v = iterator->getFirstVertex();
 
@@ -153,9 +153,9 @@ int te::qt::plugins::fiocruz::FlowDominance::getEdgeWeightAttrValue(te::graph::A
   // verify what the index of the weight property
   int idx = -1;
 
-  for (int i = 0; i < graph->getVertexPropertySize(); ++i)
+  for (int i = 0; i < graph->getEdgePropertySize(); ++i)
   {
-    if (graph->getVertexProperty(i)->getName() == attrName)
+    if (graph->getEdgeProperty(i)->getName() == attrName)
     {
       idx = i;
       break;

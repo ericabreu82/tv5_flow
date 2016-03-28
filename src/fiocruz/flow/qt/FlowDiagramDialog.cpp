@@ -195,7 +195,7 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
 
   try
   {
-    fge.exportGraph(outputDataSource, dataSetName, graph.get());
+    fge.exportGraph(outputDataSource, dataSetName, graph.get(), te::qt::plugins::fiocruz::FLOWGRAPH_EDGE_TYPE);
   }
   catch (const std::exception& e)
   {

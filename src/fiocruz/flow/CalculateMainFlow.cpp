@@ -116,7 +116,7 @@ void te::qt::plugins::fiocruz::CalculateMainFlow::buildGraph(te::graph::Bidirect
 
     // Adiciona o campo com a informacao de quantos filhos este noh possue
     {
-      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("predecessors", te::dt::INT32_TYPE);
+      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("input", te::dt::INT32_TYPE);
       p->setParent(0);
       p->setId(0);
       biGraph->addVertexProperty(p);
@@ -158,13 +158,13 @@ void te::qt::plugins::fiocruz::CalculateMainFlow::buildGraph(te::graph::Bidirect
   {
     vertex->setAttributeVecSize(vecAttrSize);
 
-    vertex->addAttribute(grapEdgeAttrSize - 4, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(-1));
+    vertex->addAttribute(vecAttrSize - 4, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(-1));
 
     if (addStatisticsColumns)
     {
-      vertex->addAttribute(grapEdgeAttrSize - 3, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(-1));
-      vertex->addAttribute(grapEdgeAttrSize - 2, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(-1));
-      vertex->addAttribute(grapEdgeAttrSize - 1, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(-1));
+      vertex->addAttribute(vecAttrSize - 3, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(-1));
+      vertex->addAttribute(vecAttrSize - 2, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(-1));
+      vertex->addAttribute(vecAttrSize - 1, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(-1));
     }
 
     vertex = memIt->getNextVertex();

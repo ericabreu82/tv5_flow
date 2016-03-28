@@ -48,13 +48,28 @@ te::qt::plugins::fiocruz::FlowGraphExport::~FlowGraphExport()
 
 }
 
-void te::qt::plugins::fiocruz::FlowGraphExport::exportGraph(te::da::DataSourcePtr ds, std::string dataSetName, te::graph::AbstractGraph* graph)
+void te::qt::plugins::fiocruz::FlowGraphExport::exportGraph(te::da::DataSourcePtr ds, std::string dataSetName, te::graph::AbstractGraph* graph, FlowGraphExportType exportType)
 {
-  std::auto_ptr<te::da::DataSetType> dsType = createDataSetType(dataSetName, graph);
+  std::auto_ptr<te::da::DataSetType> dsType;
 
-  std::auto_ptr<te::mem::DataSet> dataSet = createDataSet(dsType.get(), graph);
+  std::auto_ptr<te::mem::DataSet> dataSet;
 
+  if (exportType == FlowGraphExportType::FLOWGRAPH_EDGE_TYPE)
+  {
+    dsType = createEdgeDataSetType(dataSetName, graph);
+    dataSet = createEdgeDataSet(dsType.get(), graph);
+  }
+  else if (exportType == FlowGraphExportType::FLOWGRAPH_VERTEX_TYPE)
+  {
+    dsType = createVertexDataSetType(dataSetName, graph);
+    dataSet = createVertexDataSet(dsType.get(), graph);
+  }
+  else
+  {
+    throw;
+  }
 
+  //save data
   if (dsType.get() && dataSet.get())
   {
     dataSet->moveBeforeFirst();
@@ -67,7 +82,7 @@ void te::qt::plugins::fiocruz::FlowGraphExport::exportGraph(te::da::DataSourcePt
   }
 }
 
-std::auto_ptr<te::da::DataSetType> te::qt::plugins::fiocruz::FlowGraphExport::createDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph)
+std::auto_ptr<te::da::DataSetType> te::qt::plugins::fiocruz::FlowGraphExport::createEdgeDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph)
 {
   std::auto_ptr<te::da::DataSetType> dataSetType(new te::da::DataSetType(dataSetName));
 
@@ -94,12 +109,35 @@ std::auto_ptr<te::da::DataSetType> te::qt::plugins::fiocruz::FlowGraphExport::cr
   return dataSetType;
 }
 
-std::auto_ptr<te::mem::DataSet> te::qt::plugins::fiocruz::FlowGraphExport::createDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph)
+std::auto_ptr<te::da::DataSetType> te::qt::plugins::fiocruz::FlowGraphExport::createVertexDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph)
+{
+  std::auto_ptr<te::da::DataSetType> dataSetType(new te::da::DataSetType(dataSetName));
+
+  //create index property
+  te::dt::SimpleProperty* idxProperty = new te::dt::SimpleProperty("index", te::dt::INT32_TYPE);
+  dataSetType->add(idxProperty);
+
+  //create all graph properties
+  for (int i = 0; i < graph->getMetadata()->getVertexPropertySize(); ++i)
+  {
+    te::dt::Property* prop = graph->getMetadata()->getVertexProperty(i);
+
+    te::dt::Property* newProp = prop->clone();
+    newProp->setId(0);
+    newProp->setParent(0);
+
+    dataSetType->add(newProp);
+  }
+
+  return dataSetType;
+}
+
+std::auto_ptr<te::mem::DataSet> te::qt::plugins::fiocruz::FlowGraphExport::createEdgeDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph)
 {
   std::auto_ptr<te::mem::DataSet> outDataset(new te::mem::DataSet(dsType));
 
   //get property map
-  std::map<int, std::string> propMap = getGraphPropertyMap(graph);
+  std::map<int, std::string> propMap = getEdgePropertyMap(graph);
 
   //vertex geom prop
   int spatialPropertyId = -1;
@@ -164,13 +202,78 @@ std::auto_ptr<te::mem::DataSet> te::qt::plugins::fiocruz::FlowGraphExport::creat
   return outDataset;
 }
 
-std::map<int, std::string> te::qt::plugins::fiocruz::FlowGraphExport::getGraphPropertyMap(te::graph::AbstractGraph* graph)
+std::auto_ptr<te::mem::DataSet> te::qt::plugins::fiocruz::FlowGraphExport::createVertexDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph)
+{
+  std::auto_ptr<te::mem::DataSet> outDataset(new te::mem::DataSet(dsType));
+
+  //get property map
+  std::map<int, std::string> propMap = getVertexPropertyMap(graph);
+
+  //vertex geom prop
+  int spatialPropertyId = -1;
+  getGraphVerterxAttrIndex(graph, "coords", spatialPropertyId);
+
+  //create graph iterator
+  std::auto_ptr<te::graph::MemoryIterator> it(new te::graph::MemoryIterator(graph));
+
+  te::graph::Vertex* v = it->getFirstVertex();
+
+  while (!it->isVertexIteratorAfterEnd())
+  {
+    //create dataset item
+    te::mem::DataSetItem* outDSetItem = new te::mem::DataSetItem(outDataset.get());
+
+    //get vertex info
+    int idx = v->getId();
+
+    //set index information
+    outDSetItem->setInt32("index", idx);
+
+    //set the other attributes
+    std::vector<te::dt::AbstractData*> adVec = v->getAttributes();
+
+    std::map<int, std::string>::iterator itMap = propMap.begin();
+
+    while (itMap != propMap.end())
+    {
+      te::dt::AbstractData* adClone = adVec[itMap->first]->clone();
+
+      outDSetItem->setValue(itMap->second, adClone);
+
+      ++itMap;
+    }
+
+    //add item into dataset
+    outDataset->add(outDSetItem);
+   
+
+    v = it->getNextVertex();
+  }
+
+  return outDataset;
+}
+
+std::map<int, std::string> te::qt::plugins::fiocruz::FlowGraphExport::getEdgePropertyMap(te::graph::AbstractGraph* graph)
 {
   std::map<int, std::string> propMap;
 
   for (int i = 0; i < graph->getMetadata()->getEdgePropertySize(); ++i)
   {
     te::dt::Property* prop = graph->getMetadata()->getEdgeProperty(i);
+
+    propMap.insert(std::map<int, std::string>::value_type(i, prop->getName()));
+  }
+
+  return propMap;
+}
+
+std::map<int, std::string> te::qt::plugins::fiocruz::FlowGraphExport::getVertexPropertyMap(te::graph::AbstractGraph* graph)
+{
+  std::map<int, std::string> propMap;
+
+  for (int i = 0; i < graph->getMetadata()->getVertexPropertySize(); ++i)
+  {
+    te::dt::Property* prop = graph->getMetadata()->getVertexProperty(i);
 
     propMap.insert(std::map<int, std::string>::value_type(i, prop->getName()));
   }

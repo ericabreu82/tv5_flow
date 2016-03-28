@@ -262,7 +262,7 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
 
   try
   {
-    fge.exportGraph(outputDataSource, dataSetName, graph);
+    fge.exportGraph(outputDataSource, dataSetName, graph, te::qt::plugins::fiocruz::FLOWGRAPH_VERTEX_TYPE);
   }
   catch (const std::exception& e)
   {

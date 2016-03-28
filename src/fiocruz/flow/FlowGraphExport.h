@@ -44,6 +44,12 @@ namespace te
     {
       namespace fiocruz
       {
+
+        enum FlowGraphExportType
+        {
+          FLOWGRAPH_VERTEX_TYPE,
+          FLOWGRAPH_EDGE_TYPE
+        };
         /*!
         \class FlowGraphExport
 
@@ -60,15 +66,21 @@ namespace te
 
           public:
 
-            void exportGraph(te::da::DataSourcePtr ds, std::string dataSetName, te::graph::AbstractGraph* graph);
+            void exportGraph(te::da::DataSourcePtr ds, std::string dataSetName, te::graph::AbstractGraph* graph, FlowGraphExportType exportType);
 
           protected:
 
-            std::auto_ptr<te::da::DataSetType> createDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph);
+            std::auto_ptr<te::da::DataSetType> createEdgeDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph);
 
-            std::auto_ptr<te::mem::DataSet> createDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph);
+            std::auto_ptr<te::da::DataSetType> createVertexDataSetType(std::string dataSetName, te::graph::AbstractGraph* graph);
 
-            std::map<int, std::string> getGraphPropertyMap(te::graph::AbstractGraph* graph);
+            std::auto_ptr<te::mem::DataSet> createEdgeDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph);
+
+            std::auto_ptr<te::mem::DataSet> createVertexDataSet(te::da::DataSetType* dsType, te::graph::AbstractGraph* graph);
+
+            std::map<int, std::string> getEdgePropertyMap(te::graph::AbstractGraph* graph);
+
+            std::map<int, std::string> getVertexPropertyMap(te::graph::AbstractGraph* graph);
 
             bool getGraphVerterxAttrIndex(te::graph::AbstractGraph* graph, std::string attrName, int& index);
 

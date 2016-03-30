@@ -211,7 +211,7 @@ bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createEdgeObjects(te::da
 {
  
   {//add from property to graph
-    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("from", te::dt::INT32_TYPE);
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("from_id", te::dt::INT32_TYPE);
     p->setParent(0);
     p->setId(0);
     m_graph->addEdgeProperty(p);
@@ -225,7 +225,7 @@ bool te::qt::plugins::fiocruz::FlowGraphDiagramBuilder::createEdgeObjects(te::da
   }
 
   {//add to property to graph
-    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("to", te::dt::INT32_TYPE);
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("to_id", te::dt::INT32_TYPE);
     p->setParent(0);
     p->setId(0);
     m_graph->addEdgeProperty(p);

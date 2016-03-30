@@ -34,8 +34,12 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/dataaccess/datasource/DataSourceInfoManager.h>
 #include <terralib/dataaccess/datasource/DataSourceManager.h>
 #include <terralib/dataaccess/utils/Utils.h>
+#include <terralib/dataaccess/query_h.h>
+#include <terralib/geometry/GeometryProperty.h>
+#include <terralib/maptools/QueryLayer.h>
 #include <terralib/qt/widgets/datasource/selector/DataSourceSelectorDialog.h>
 #include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
+#include <terralib/se/Utils.h>
 
 // Qt
 #include <QMessageBox>
@@ -86,9 +90,9 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::setLayerList(std::list<te::map
     std::auto_ptr<te::da::DataSetType> dsType = l->getSchema();
 
     //check if the layer is a flow layer
-    te::dt::Property* fromProp = dsType->getProperty("from");
+    te::dt::Property* fromProp = dsType->getProperty("from_id");
     te::dt::Property* fromNameProp = dsType->getProperty("from_name");
-    te::dt::Property* toProp = dsType->getProperty("to");
+    te::dt::Property* toProp = dsType->getProperty("to_id");
     te::dt::Property* toNameProp = dsType->getProperty("to_name");
     te::dt::Property* weightProp = dsType->getProperty("weight");
     te::dt::Property* distProp = dsType->getProperty("distance");
@@ -109,9 +113,9 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::setLayerList(std::list<te::map
     onDomLayerComboBoxActivated(0);
 }
 
-te::map::AbstractLayerPtr te::qt::plugins::fiocruz::FlowNetworkDialog::getOutputLayer()
+std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::FlowNetworkDialog::getOutputLayers()
 {
-  return m_outputLayer;
+  return m_outputLayerList;
 }
 
 void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
@@ -262,7 +266,7 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
 
   try
   {
-    fge.exportGraph(outputDataSource, dataSetName, graph, te::qt::plugins::fiocruz::FLOWGRAPH_VERTEX_TYPE);
+    fge.exportGraph(outputDataSource, dataSetName, graph, te::qt::plugins::fiocruz::FLOWGRAPH_EDGE_TYPE);
   }
   catch (const std::exception& e)
   {
@@ -285,19 +289,83 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
 
   graph->flush();
 
-  //create layer
-  te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasource->getId());
-
-  te::qt::widgets::DataSet2Layer converter(m_outputDatasource->getId());
-
-  te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
-
-  m_outputLayer = converter(dt);
-
-  te::map::DataSetLayer* dsLayer = dynamic_cast<te::map::DataSetLayer*>(m_outputLayer.get());
-  if (dsLayer != 0)
   {
-    dsLayer->setRendererType("FLOWNETWORK_LAYER_RENDERER");
+    //create layer
+    te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasource->getId());
+
+    te::qt::widgets::DataSet2Layer converter(m_outputDatasource->getId());
+
+    te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
+
+    te::map::AbstractLayerPtr layerEdge = converter(dt);
+
+    te::map::DataSetLayer* dsLayer = dynamic_cast<te::map::DataSetLayer*>(layerEdge.get());
+    if (dsLayer != 0)
+    {
+      dsLayer->setRendererType("FLOWNETWORK_LAYER_RENDERER");
+    }
+
+    m_outputLayerList.push_back(layerEdge);
+  }
+
+
+  {
+    te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasource->getId());
+
+    static boost::uuids::basic_random_generator<boost::mt19937> gen;
+    boost::uuids::uuid u = gen();
+    std::string id = boost::uuids::to_string(u);
+
+    std::auto_ptr<te::da::DataSetType> dsTypeEdge = ds->getDataSetType(ds->getDataSetNames()[0]);
+
+    std::string title = dsTypeEdge->getTitle() + "_mainFLow";
+    std::vector<te::dt::Property*> props = dsTypeEdge->getProperties();
+
+    te::da::Fields* fields = new te::da::Fields;
+
+    for (std::size_t t = 0; t < props.size(); ++t)
+    {
+      if (props[t]->getName() == "FID" || props[t]->getName() == "fid")
+        continue;
+
+      te::da::Field* fItem = new te::da::Field(dataSetName + "." + props[t]->getName());
+
+      fields->push_back(fItem);
+    }
+
+    te::da::From* from = new te::da::From;
+    te::da::FromItem* fromItem = new te::da::DataSetName(dataSetName, dataSetName);
+    from->push_back(fromItem);
+
+    te::da::PropertyName* propMainFlow = new te::da::PropertyName("main_flow");
+    te::da::Literal* valMainFlow = new te::da::LiteralInt32(1);
+    te::da::EqualTo* equalToMainFlow = new te::da::EqualTo(propMainFlow, valMainFlow);
+
+    te::da::Where* where = new te::da::Where(equalToMainFlow);
+
+    te::da::Select* s = new te::da::Select();
+    s->setFields(fields);
+    s->setFrom(from);
+    s->setWhere(where);
+
+    te::map::QueryLayerPtr layer(new te::map::QueryLayer(id, title));
+    layer->setDataSourceId(ds->getId());
+    layer->setRendererType("FLOWNETWORK_LAYER_RENDERER");
+    layer->setQuery(s);
+    layer->computeExtent();
+
+    // SRID
+    std::auto_ptr<const te::map::LayerSchema> schema(layer->getSchema());
+    te::gm::GeometryProperty* gp = te::da::GetFirstGeomProperty(schema.get());
+    if (gp)
+    {
+      layer->setSRID(gp->getSRID());
+
+      // style
+      layer->setStyle(te::se::CreateFeatureTypeStyle(gp->getGeometryType()));
+    }
+
+    m_outputLayerList.push_back(layer);
   }
 
   accept();

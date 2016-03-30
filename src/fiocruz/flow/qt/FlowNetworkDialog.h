@@ -66,7 +66,7 @@ namespace te
 
           void setLayerList(std::list<te::map::AbstractLayerPtr> list);
 
-          te::map::AbstractLayerPtr getOutputLayer();
+          std::vector<te::map::AbstractLayerPtr> getOutputLayers();
 
         public slots:
 
@@ -84,7 +84,7 @@ namespace te
 
           te::da::DataSourceInfoPtr m_outputDatasource;
           
-          te::map::AbstractLayerPtr m_outputLayer;
+          std::vector<te::map::AbstractLayerPtr> m_outputLayerList;
         };
       }   // end namespace fiocruz
     }     // end namespace plugins

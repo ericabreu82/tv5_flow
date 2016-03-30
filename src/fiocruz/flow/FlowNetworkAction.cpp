@@ -62,6 +62,11 @@ void te::qt::plugins::fiocruz::FlowNetworkAction::onActionActivated(bool checked
   if(dlg.exec() == QDialog::Accepted)
   {
     //add new layer
-    addNewLayer(dlg.getOutputLayer());
+    std::vector<te::map::AbstractLayerPtr> list = dlg.getOutputLayers();
+
+    for (std::size_t t = 0; t < list.size(); ++t)
+    {
+      addNewLayer(list[t]);
+    }
   }
 }

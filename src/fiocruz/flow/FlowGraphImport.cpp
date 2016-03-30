@@ -56,9 +56,9 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::importGraph
 {
   te::graph::AbstractGraph* graph = buildGraph(addStatisticsColumns);
 
-  int originIdx = te::da::GetPropertyIndex(dataSet.get(), "from");
+  int originIdx = te::da::GetPropertyIndex(dataSet.get(), "from_id");
   int originNameIdx = te::da::GetPropertyIndex(dataSet.get(), "from_name");
-  int destinyIdx = te::da::GetPropertyIndex(dataSet.get(), "to");
+  int destinyIdx = te::da::GetPropertyIndex(dataSet.get(), "to_id");
   int destinyNameIdx = te::da::GetPropertyIndex(dataSet.get(), "to_name");
   int weightIdx = te::da::GetPropertyIndex(dataSet.get(), "weight");
   int distIdx = te::da::GetPropertyIndex(dataSet.get(), "distance");
@@ -212,7 +212,7 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph(
 
   //create edge attributes
   {//add from property to graph
-    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("from", te::dt::INT32_TYPE);
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("from_id", te::dt::INT32_TYPE);
     p->setParent(0);
     p->setId(0);
     graph->addEdgeProperty(p);
@@ -226,7 +226,7 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph(
   }
 
   {//add to property to graph
-    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("to", te::dt::INT32_TYPE);
+    te::dt::SimpleProperty* p = new te::dt::SimpleProperty("to_id", te::dt::INT32_TYPE);
     p->setParent(0);
     p->setId(0);
     graph->addEdgeProperty(p);

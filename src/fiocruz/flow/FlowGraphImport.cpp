@@ -107,7 +107,7 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::importGraph
         vTo->setAttributeVecSize(2);
 
         vTo->addAttribute(0, new te::dt::SimpleData<std::string, te::dt::STRING_TIME>(destinyName));
-        vTo->addAttribute(1, new te::gm::Point(*line->getPointN(0)));
+        vTo->addAttribute(1, new te::gm::Point(*line->getPointN(1)));
 
         //add to graph
         graph->add(vTo);

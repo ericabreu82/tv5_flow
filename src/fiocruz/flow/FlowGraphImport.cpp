@@ -135,9 +135,7 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::importGraph
   }
 
   if (addStatisticsColumns)
-  {
     calculateStatistics(graph);
-  }
 
   return graph;
 }
@@ -179,7 +177,7 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph(
   {
     // Adiciona o campo com o número de fluxos de entrada
     {
-      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("in", te::dt::INT32_TYPE);
+      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("in_flows", te::dt::INT32_TYPE);
       p->setParent(0);
       p->setId(0);
       graph->addVertexProperty(p);
@@ -187,7 +185,7 @@ te::graph::AbstractGraph* te::qt::plugins::fiocruz::FlowGraphImport::buildGraph(
 
     // Adiciona o campo com o número de fluxos de saída
     {
-      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("out", te::dt::INT32_TYPE);
+      te::dt::SimpleProperty* p = new te::dt::SimpleProperty("out_flows", te::dt::INT32_TYPE);
       p->setParent(0);
       p->setId(0);
       graph->addVertexProperty(p);

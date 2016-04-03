@@ -39,6 +39,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/maptools/QueryLayer.h>
 #include <terralib/qt/widgets/datasource/selector/DataSourceSelectorDialog.h>
 #include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
+#include <terralib/qt/widgets/utils/ScopedCursor.h>
 #include <terralib/se/Utils.h>
 
 // Qt
@@ -60,11 +61,8 @@ m_ui(new Ui::FlowNetworkDialogForm)
   // add controls
   m_ui->setupUi(this);
 
-  m_ui->m_targetDatasourceToolButton->setIcon(QIcon::fromTheme("datasource"));
-
   //connects
   connect(m_ui->m_domLayerComboBox, SIGNAL(activated(int)), this, SLOT(onDomLayerComboBoxActivated(int)));
-  connect(m_ui->m_targetDatasourceToolButton, SIGNAL(pressed()), this, SLOT(onTargetDatasourceToolButtonPressed()));
   connect(m_ui->m_targetFileToolButton, SIGNAL(pressed()), this, SLOT(onTargetFileToolButtonPressed()));
   connect(m_ui->m_okPushButton, SIGNAL(released()), this, SLOT(onOkPushButtonClicked()));
 
@@ -120,6 +118,8 @@ std::vector<te::map::AbstractLayerPtr> te::qt::plugins::fiocruz::FlowNetworkDial
 
 void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
 {
+  te::qt::widgets::ScopedCursor cursor(Qt::WaitCursor);
+
   //check input parameters
   if (m_ui->m_flowLayerComboBox->currentText().isEmpty())
   {
@@ -171,7 +171,9 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
     return;
   }
 
-  if (!m_outputDatasource.get())
+  createDataSources();
+
+  if (!m_outputDatasourceEdge.get() || !m_outputDatasourceVertex.get())
   {
     QMessageBox::warning(this, tr("Warning"), tr("Output data source not defined."));
     return;
@@ -183,7 +185,7 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
   if (idx != std::string::npos)
     dataSetName = dataSetName.substr(0, idx);
 
-  std::string graphName = dataSetName;
+  //std::string graphName = dataSetName;
 
   //load graph
   QVariant flowVarLayer = m_ui->m_flowLayerComboBox->currentData(Qt::UserRole);
@@ -260,7 +262,138 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
 
 
   //export
-  te::da::DataSourcePtr outputDataSource = te::da::DataSourceManager::getInstance().get(m_outputDatasource->getId(), m_outputDatasource->getType(), m_outputDatasource->getConnInfo());
+  try
+  {
+    exportEdges(graph);
+
+    exportNodes(graph);
+  }
+  catch (const std::exception& e)
+  {
+    QMessageBox::warning(this, tr("Warning"), e.what());
+
+    graph->flush();
+
+    return;
+  }
+  catch (...)
+  {
+    QMessageBox::warning(this, tr("Warning"), tr("Internal Error"));
+
+    graph->flush();
+
+    return;
+  }
+
+  graph->flush();
+
+  QMessageBox::information(this, tr("Information"), tr("Flow Network Created."));
+
+  accept();
+}
+
+void te::qt::plugins::fiocruz::FlowNetworkDialog::onDomLayerComboBoxActivated(int index)
+{
+  QVariant varLayer = m_ui->m_domLayerComboBox->itemData(index, Qt::UserRole);
+
+  te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
+
+  m_ui->m_domPropertyIdxComboBox->clear();
+  m_ui->m_domPropertyNameComboBox->clear();
+
+  //set properties from spatial layer into referency property combo
+  std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
+
+  for (std::size_t t = 0; t < dsType->getProperties().size(); ++t)
+  {
+    te::dt::Property* prop = dsType->getProperties()[t];
+
+    if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::INT64_TYPE || prop->getType() == te::dt::STRING_TYPE)
+    {
+      m_ui->m_domPropertyIdxComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+      m_ui->m_domPropertyNameComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
+    }
+  }
+}
+
+void te::qt::plugins::fiocruz::FlowNetworkDialog::onTargetFileToolButtonPressed()
+{
+  m_ui->m_newLayerNameLineEdit->clear();
+  m_ui->m_repositoryLineEdit->clear();
+
+  QString fileName = QFileDialog::getExistingDirectory(this, tr("Select directory to save flow network..."));
+
+  if (fileName.isEmpty())
+    return;
+
+  m_ui->m_repositoryLineEdit->setText(fileName);
+}
+
+void te::qt::plugins::fiocruz::FlowNetworkDialog::createDataSources()
+{
+  std::string path = m_ui->m_repositoryLineEdit->text().toStdString();
+
+  std::string baseName = m_ui->m_newLayerNameLineEdit->text().toStdString();
+
+  {
+    std::string edgeDataSourceName = path + "/" + baseName + "_edges.shp";
+
+    //create new data source
+    boost::filesystem::path uri(edgeDataSourceName);
+
+    std::map<std::string, std::string> dsInfo;
+    dsInfo["URI"] = uri.string();
+
+    boost::uuids::basic_random_generator<boost::mt19937> gen;
+    boost::uuids::uuid u = gen();
+    std::string id_ds = boost::uuids::to_string(u);
+
+    te::da::DataSourceInfoPtr dsInfoPtr(new te::da::DataSourceInfo);
+    dsInfoPtr->setConnInfo(dsInfo);
+    dsInfoPtr->setTitle(uri.stem().string());
+    dsInfoPtr->setAccessDriver("OGR");
+    dsInfoPtr->setType("OGR");
+    dsInfoPtr->setDescription(uri.string());
+    dsInfoPtr->setId(id_ds);
+
+    te::da::DataSourceInfoManager::getInstance().add(dsInfoPtr);
+
+    m_outputDatasourceEdge = dsInfoPtr;
+  }
+
+  {
+    std::string vertexDataSourceName = path + "/" + baseName + "_nodes.shp";
+
+    //create new data source
+    boost::filesystem::path uri(vertexDataSourceName);
+
+    std::map<std::string, std::string> dsInfo;
+    dsInfo["URI"] = uri.string();
+
+    boost::uuids::basic_random_generator<boost::mt19937> gen;
+    boost::uuids::uuid u = gen();
+    std::string id_ds = boost::uuids::to_string(u);
+
+    te::da::DataSourceInfoPtr dsInfoPtr(new te::da::DataSourceInfo);
+    dsInfoPtr->setConnInfo(dsInfo);
+    dsInfoPtr->setTitle(uri.stem().string());
+    dsInfoPtr->setAccessDriver("OGR");
+    dsInfoPtr->setType("OGR");
+    dsInfoPtr->setDescription(uri.string());
+    dsInfoPtr->setId(id_ds);
+
+    te::da::DataSourceInfoManager::getInstance().add(dsInfoPtr);
+
+    m_outputDatasourceVertex = dsInfoPtr;
+  }
+}
+
+void te::qt::plugins::fiocruz::FlowNetworkDialog::exportEdges(te::graph::AbstractGraph* graph)
+{
+  std::string baseName = m_ui->m_newLayerNameLineEdit->text().toStdString();
+  std::string dataSetName = baseName + "_edges";
+
+  te::da::DataSourcePtr outputDataSource = te::da::DataSourceManager::getInstance().get(m_outputDatasourceEdge->getId(), m_outputDatasourceEdge->getType(), m_outputDatasourceEdge->getConnInfo());
 
   te::qt::plugins::fiocruz::FlowGraphExport fge;
 
@@ -287,13 +420,11 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
 
   outputDataSource->close();
 
-  graph->flush();
-
   {
     //create layer
-    te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasource->getId());
+    te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasourceEdge->getId());
 
-    te::qt::widgets::DataSet2Layer converter(m_outputDatasource->getId());
+    te::qt::widgets::DataSet2Layer converter(m_outputDatasourceEdge->getId());
 
     te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
 
@@ -310,7 +441,7 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
 
 
   {
-    te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasource->getId());
+    te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasourceEdge->getId());
 
     static boost::uuids::basic_random_generator<boost::mt19937> gen;
     boost::uuids::uuid u = gen();
@@ -367,92 +498,117 @@ void te::qt::plugins::fiocruz::FlowNetworkDialog::onOkPushButtonClicked()
 
     m_outputLayerList.push_back(layer);
   }
-
-  accept();
 }
 
-void te::qt::plugins::fiocruz::FlowNetworkDialog::onDomLayerComboBoxActivated(int index)
+void te::qt::plugins::fiocruz::FlowNetworkDialog::exportNodes(te::graph::AbstractGraph* graph)
 {
-  QVariant varLayer = m_ui->m_domLayerComboBox->itemData(index, Qt::UserRole);
+  std::string baseName = m_ui->m_newLayerNameLineEdit->text().toStdString();
+  std::string dataSetName = baseName + "_nodes";
 
-  te::map::AbstractLayerPtr layer = varLayer.value<te::map::AbstractLayerPtr>();
+  te::da::DataSourcePtr outputDataSource = te::da::DataSourceManager::getInstance().get(m_outputDatasourceVertex->getId(), m_outputDatasourceVertex->getType(), m_outputDatasourceVertex->getConnInfo());
 
-  m_ui->m_domPropertyIdxComboBox->clear();
-  m_ui->m_domPropertyNameComboBox->clear();
+  te::qt::plugins::fiocruz::FlowGraphExport fge;
 
-  //set properties from spatial layer into referency property combo
-  std::auto_ptr<te::da::DataSetType> dsType = layer->getSchema();
-
-  for (std::size_t t = 0; t < dsType->getProperties().size(); ++t)
+  try
   {
-    te::dt::Property* prop = dsType->getProperties()[t];
-
-    if (prop->getType() == te::dt::INT32_TYPE || prop->getType() == te::dt::INT64_TYPE || prop->getType() == te::dt::STRING_TYPE)
-    {
-      m_ui->m_domPropertyIdxComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
-      m_ui->m_domPropertyNameComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
-    }
+    fge.exportGraph(outputDataSource, dataSetName, graph, te::qt::plugins::fiocruz::FLOWGRAPH_VERTEX_TYPE);
   }
-}
+  catch (const std::exception& e)
+  {
+    QMessageBox::warning(this, tr("Warning"), e.what());
 
-void te::qt::plugins::fiocruz::FlowNetworkDialog::onTargetDatasourceToolButtonPressed()
-{
-  m_ui->m_newLayerNameLineEdit->clear();
-  m_ui->m_newLayerNameLineEdit->setEnabled(true);
+    graph->flush();
 
-  te::qt::widgets::DataSourceSelectorDialog dlg(this);
-  dlg.exec();
-
-  std::list<te::da::DataSourceInfoPtr> dsPtrList = dlg.getSelecteds();
-
-  if (dsPtrList.size() <= 0)
     return;
+  }
+  catch (...)
+  {
+    QMessageBox::warning(this, tr("Warning"), tr("Internal Error"));
 
-  std::list<te::da::DataSourceInfoPtr>::iterator it = dsPtrList.begin();
+    graph->flush();
 
-  m_ui->m_repositoryLineEdit->setText(QString(it->get()->getTitle().c_str()));
-
-  m_outputDatasource = *it;
-}
-
-void te::qt::plugins::fiocruz::FlowNetworkDialog::onTargetFileToolButtonPressed()
-{
-  m_ui->m_newLayerNameLineEdit->clear();
-  m_ui->m_repositoryLineEdit->clear();
-
-  QString fileName = QFileDialog::getSaveFileName(this, tr("Save as..."), QString(), tr("Shapefile (*.shp *.SHP);;"), 0, QFileDialog::DontConfirmOverwrite);
-
-  if (fileName.isEmpty())
     return;
+  }
 
-  boost::filesystem::path outfile(fileName.toStdString());
+  outputDataSource->close();
 
-  m_ui->m_repositoryLineEdit->setText(outfile.string().c_str());
+  {
+    //create layer
+    te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasourceVertex->getId());
 
-  m_ui->m_newLayerNameLineEdit->setText(outfile.leaf().string().c_str());
+    te::qt::widgets::DataSet2Layer converter(m_outputDatasourceVertex->getId());
 
-  m_ui->m_newLayerNameLineEdit->setEnabled(false);
+    te::da::DataSetTypePtr dt(ds->getDataSetType(ds->getDataSetNames()[0]).release());
 
-  //create new data source
-  boost::filesystem::path uri(m_ui->m_repositoryLineEdit->text().toStdString());
+    te::map::AbstractLayerPtr layerVertex = converter(dt);
 
-  std::map<std::string, std::string> dsInfo;
-  dsInfo["URI"] = uri.string();
+    te::map::DataSetLayer* dsLayer = dynamic_cast<te::map::DataSetLayer*>(layerVertex.get());
+    if (dsLayer != 0)
+    {
+      dsLayer->setRendererType("FLOWNETWORK_LAYER_RENDERER");
+    }
 
-  boost::uuids::basic_random_generator<boost::mt19937> gen;
-  boost::uuids::uuid u = gen();
-  std::string id_ds = boost::uuids::to_string(u);
+    m_outputLayerList.push_back(layerVertex);
+  }
 
-  te::da::DataSourceInfoPtr dsInfoPtr(new te::da::DataSourceInfo);
-  dsInfoPtr->setConnInfo(dsInfo);
-  dsInfoPtr->setTitle(uri.stem().string());
-  dsInfoPtr->setAccessDriver("OGR");
-  dsInfoPtr->setType("OGR");
-  dsInfoPtr->setDescription(uri.string());
-  dsInfoPtr->setId(id_ds);
 
-  te::da::DataSourceInfoManager::getInstance().add(dsInfoPtr);
+  {
+    te::da::DataSourcePtr ds = te::da::GetDataSource(m_outputDatasourceVertex->getId());
 
-  m_outputDatasource = dsInfoPtr;
+    static boost::uuids::basic_random_generator<boost::mt19937> gen;
+    boost::uuids::uuid u = gen();
+    std::string id = boost::uuids::to_string(u);
+
+    std::auto_ptr<te::da::DataSetType> dsTypeVertex = ds->getDataSetType(ds->getDataSetNames()[0]);
+
+    std::string title = dsTypeVertex->getTitle() + "_roots";
+    std::vector<te::dt::Property*> props = dsTypeVertex->getProperties();
+
+    te::da::Fields* fields = new te::da::Fields;
+
+    for (std::size_t t = 0; t < props.size(); ++t)
+    {
+      if (props[t]->getName() == "FID" || props[t]->getName() == "fid")
+        continue;
+
+      te::da::Field* fItem = new te::da::Field(dataSetName + "." + props[t]->getName());
+
+      fields->push_back(fItem);
+    }
+
+    te::da::From* from = new te::da::From;
+    te::da::FromItem* fromItem = new te::da::DataSetName(dataSetName, dataSetName);
+    from->push_back(fromItem);
+
+    te::da::PropertyName* propLevel = new te::da::PropertyName("level");
+    te::da::Literal* valLevel = new te::da::LiteralInt32(0);
+    te::da::EqualTo* equalToLevel = new te::da::EqualTo(propLevel, valLevel);
+
+    te::da::Where* where = new te::da::Where(equalToLevel);
+
+    te::da::Select* s = new te::da::Select();
+    s->setFields(fields);
+    s->setFrom(from);
+    s->setWhere(where);
+
+    te::map::QueryLayerPtr layer(new te::map::QueryLayer(id, title));
+    layer->setDataSourceId(ds->getId());
+    layer->setRendererType("FLOWNETWORK_LAYER_RENDERER");
+    layer->setQuery(s);
+    layer->computeExtent();
+
+    // SRID
+    std::auto_ptr<const te::map::LayerSchema> schema(layer->getSchema());
+    te::gm::GeometryProperty* gp = te::da::GetFirstGeomProperty(schema.get());
+    if (gp)
+    {
+      layer->setSRID(gp->getSRID());
+
+      // style
+      layer->setStyle(te::se::CreateFeatureTypeStyle(gp->getGeometryType()));
+    }
+
+    m_outputLayerList.push_back(layer);
+  }
 }
 

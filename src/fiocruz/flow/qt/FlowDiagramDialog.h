@@ -74,8 +74,6 @@ namespace te
 
           void onTabularLayerComboBoxActivated(int index);
 
-          void onTargetDatasourceToolButtonPressed();
-
           void onTargetFileToolButtonPressed();
 
           void onOkPushButtonClicked();

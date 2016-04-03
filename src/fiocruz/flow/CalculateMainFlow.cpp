@@ -81,10 +81,13 @@ void te::qt::plugins::fiocruz::CalculateMainFlow::calculate(te::graph::Bidirecti
   }
 
   //get roots
-  std::vector<int> roots = getRoots(biGraph);
+  std::vector<te::graph::Vertex*> roots = getRoots(biGraph);
 
   //set level info into graph
-  buildLevel(roots);
+  int levelVertexAttrIdx = getVertexAttrIdx(biGraph, "level");
+  int domVertexAttrIdx = getVertexAttrIdx(biGraph, "dominance");
+
+  buildLevel(biGraph, roots, levelVertexAttrIdx, domVertexAttrIdx);
 }
 void te::qt::plugins::fiocruz::CalculateMainFlow::buildGraph(te::graph::BidirectionalGraph* biGraph, bool addStatisticsColumns)
 {
@@ -172,6 +175,22 @@ void te::qt::plugins::fiocruz::CalculateMainFlow::buildGraph(te::graph::Bidirect
 
 }
 
+int te::qt::plugins::fiocruz::CalculateMainFlow::getVertexAttrIdx(te::graph::AbstractGraph* graph, std::string attrName)
+{
+  int idx = -1;
+
+  for (int i = 0; i < graph->getVertexPropertySize(); ++i)
+  {
+    if (graph->getVertexProperty(i)->getName() == attrName)
+    {
+      idx = i;
+      break;
+    }
+  }
+
+  return idx;
+}
+
 int te::qt::plugins::fiocruz::CalculateMainFlow::getEdgeAttrIdx(te::graph::AbstractGraph* graph, std::string attrName)
 {
   int idx = -1;
@@ -219,9 +238,9 @@ te::graph::Edge* te::qt::plugins::fiocruz::CalculateMainFlow::getHighWeightEdge(
   return edge;
 }
 
-std::vector<int> te::qt::plugins::fiocruz::CalculateMainFlow::getRoots(te::graph::AbstractGraph* graph)
+std::vector<te::graph::Vertex*> te::qt::plugins::fiocruz::CalculateMainFlow::getRoots(te::graph::AbstractGraph* graph)
 {
-  std::vector<int> roots;
+  std::vector<te::graph::Vertex*> roots;
 
   //iterate over the graph
   std::auto_ptr<te::graph::MemoryIterator> memIt(new te::graph::MemoryIterator(graph));
@@ -233,9 +252,7 @@ std::vector<int> te::qt::plugins::fiocruz::CalculateMainFlow::getRoots(te::graph
     std::set<int> successors = vertex->getSuccessors();
 
     if (successors.empty())
-    {
-      roots.push_back(vertex->getId());
-    }
+      roots.push_back(vertex);
 
     vertex = memIt->getNextVertex();
   }
@@ -243,12 +260,47 @@ std::vector<int> te::qt::plugins::fiocruz::CalculateMainFlow::getRoots(te::graph
   return roots;
 }
 
-void te::qt::plugins::fiocruz::CalculateMainFlow::buildLevel(std::vector<int> roots)
+void te::qt::plugins::fiocruz::CalculateMainFlow::buildLevel(te::graph::BidirectionalGraph* graph, std::vector<te::graph::Vertex*> roots, int levelVertexAttrIdx, int domVertexAttrIdx)
 {
+  for (std::size_t t = 0; t < roots.size(); ++t)
+  {
+    int level = 0;
 
+    buildLevel(graph, roots[t], level, levelVertexAttrIdx, domVertexAttrIdx);
+  }
 }
 
-void te::qt::plugins::fiocruz::CalculateMainFlow::buildLevel(te::graph::Vertex* vertex, int level)
+void te::qt::plugins::fiocruz::CalculateMainFlow::buildLevel(te::graph::BidirectionalGraph* graph, te::graph::Vertex* vertex, int level, int levelVertexAttrIdx, int domVertexAttrIdx)
 {
+  vertex->addAttribute(levelVertexAttrIdx, new te::dt::SimpleData<int, te::dt::INT32_TYPE>(level));
 
+  std::vector<te::graph::Vertex*> dominatedNodes = getDominatedNodes(graph, vertex, domVertexAttrIdx);
+
+  for (std::size_t t = 0; t < dominatedNodes.size(); ++t)
+    buildLevel(graph, dominatedNodes[t], level + 1, levelVertexAttrIdx, domVertexAttrIdx);
+}
+
+std::vector<te::graph::Vertex*> te::qt::plugins::fiocruz::CalculateMainFlow::getDominatedNodes(te::graph::BidirectionalGraph* graph, te::graph::Vertex* vertex, int domVertexAttrIdx)
+{
+  std::vector<te::graph::Vertex*> domVec;
+
+  te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>* vDomData = dynamic_cast< te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>* >(vertex->getAttributes()[domVertexAttrIdx]);
+
+  double vDomValue = vDomData->getValue();
+
+  std::vector<te::graph::Vertex*> vNeigh = graph->getVertexNeighborhood(vertex->getId());
+
+  for (std::size_t t = 0; t < vNeigh.size(); ++t)
+  {
+    te::graph::Vertex* vCur = vNeigh[t];
+
+    te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>* vCurDomData = dynamic_cast< te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>* >(vCur->getAttributes()[domVertexAttrIdx]);
+
+    double vCurDomValue = vCurDomData->getValue();
+
+    if (vDomValue > vCurDomValue)
+      domVec.push_back(vCur);
+  }
+
+  return domVec;
 }

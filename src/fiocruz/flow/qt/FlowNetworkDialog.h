@@ -28,6 +28,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 // TerraLib
 #include <terralib/dataaccess/datasource/DataSourceInfo.h>
+#include <terralib/graph/core/AbstractGraph.h>
 #include <terralib/maptools/AbstractLayer.h>
 #include "../../Config.h"
 
@@ -72,17 +73,25 @@ namespace te
 
           void onDomLayerComboBoxActivated(int index);
 
-          void onTargetDatasourceToolButtonPressed();
-
           void onTargetFileToolButtonPressed();
 
           void onOkPushButtonClicked();
+
+        protected:
+
+          void createDataSources();
+
+          void exportEdges(te::graph::AbstractGraph* graph);
+
+          void exportNodes(te::graph::AbstractGraph* graph);
 
         private:
 
           std::auto_ptr<Ui::FlowNetworkDialogForm> m_ui;
 
-          te::da::DataSourceInfoPtr m_outputDatasource;
+          te::da::DataSourceInfoPtr m_outputDatasourceEdge;
+
+          te::da::DataSourceInfoPtr m_outputDatasourceVertex;
           
           std::vector<te::map::AbstractLayerPtr> m_outputLayerList;
         };

@@ -315,19 +315,6 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="2">
-                    <widget class="QToolButton" name="m_targetDatasourceToolButton">
-                     <property name="minimumSize">
-                      <size>
-                       <width>0</width>
-                       <height>0</height>
-                      </size>
-                     </property>
-                     <property name="text">
-                      <string>DB</string>
-                     </property>
-                    </widget>
-                   </item>
                   </layout>
                  </item>
                  <item row="1" column="0">
@@ -415,7 +402,6 @@
   <tabstop>m_tabularWeightComboBox</tabstop>
   <tabstop>m_repositoryLineEdit</tabstop>
   <tabstop>m_targetFileToolButton</tabstop>
-  <tabstop>m_targetDatasourceToolButton</tabstop>
   <tabstop>m_newLayerNameLineEdit</tabstop>
   <tabstop>m_okPushButton</tabstop>
   <tabstop>m_cancelPushButton</tabstop>

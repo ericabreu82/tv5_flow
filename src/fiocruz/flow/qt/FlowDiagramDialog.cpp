@@ -32,6 +32,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 #include <terralib/dataaccess/utils/Utils.h>
 #include <terralib/qt/widgets/datasource/selector/DataSourceSelectorDialog.h>
 #include <terralib/qt/widgets/layer/utils/DataSet2Layer.h>
+#include <terralib/qt/widgets/utils/ScopedCursor.h>
 #include <terralib/graph/Globals.h>
 
 #include "../FlowGraphDiagramBuilder.h"
@@ -59,12 +60,9 @@ m_ui(new Ui::FlowDiagramDialogForm)
   // add controls
   m_ui->setupUi(this);
 
-  m_ui->m_targetDatasourceToolButton->setIcon(QIcon::fromTheme("datasource"));
-
   //connects
   connect(m_ui->m_spatialLayerComboBox, SIGNAL(activated(int)), this, SLOT(onSpatialLayerComboBoxActivated(int)));
   connect(m_ui->m_tabularLayerComboBox, SIGNAL(activated(int)), this, SLOT(onTabularLayerComboBoxActivated(int)));
-  connect(m_ui->m_targetDatasourceToolButton, SIGNAL(pressed()), this, SLOT(onTargetDatasourceToolButtonPressed()));
   connect(m_ui->m_targetFileToolButton, SIGNAL(pressed()), this, SLOT(onTargetFileToolButtonPressed()));
   connect(m_ui->m_okPushButton, SIGNAL(released()), this, SLOT(onOkPushButtonClicked()));
 }
@@ -111,6 +109,8 @@ te::map::AbstractLayerPtr te::qt::plugins::fiocruz::FlowDiagramDialog::getOutput
 
 void te::qt::plugins::fiocruz::FlowDiagramDialog::onOkPushButtonClicked()
 {
+  te::qt::widgets::ScopedCursor cursor(Qt::WaitCursor);
+
   //get input spatial info
   QVariant spatialVarLayer = m_ui->m_spatialLayerComboBox->currentData(Qt::UserRole);
   te::map::AbstractLayerPtr spatialLayer = spatialVarLayer.value<te::map::AbstractLayerPtr>();
@@ -276,26 +276,6 @@ void te::qt::plugins::fiocruz::FlowDiagramDialog::onTabularLayerComboBoxActivate
       m_ui->m_tabularWeightComboBox->addItem(dsType->getProperties()[t]->getName().c_str(), QVariant(t));
     }
   }
-}
-
-void te::qt::plugins::fiocruz::FlowDiagramDialog::onTargetDatasourceToolButtonPressed()
-{
-  m_ui->m_newLayerNameLineEdit->clear();
-  m_ui->m_newLayerNameLineEdit->setEnabled(true);
-
-  te::qt::widgets::DataSourceSelectorDialog dlg(this);
-  dlg.exec();
-
-  std::list<te::da::DataSourceInfoPtr> dsPtrList = dlg.getSelecteds();
-
-  if (dsPtrList.size() <= 0)
-    return;
-
-  std::list<te::da::DataSourceInfoPtr>::iterator it = dsPtrList.begin();
-
-  m_ui->m_repositoryLineEdit->setText(QString(it->get()->getTitle().c_str()));
-
-  m_outputDatasource = *it;
 }
 
 void te::qt::plugins::fiocruz::FlowDiagramDialog::onTargetFileToolButtonPressed()

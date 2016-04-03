@@ -28,6 +28,7 @@ TerraLib Team at <terralib-team@terralib.org>.
 
 // TerraLib
 #include <terralib/graph/core/AbstractGraph.h>
+#include <terralib/graph/core/Vertex.h>
 #include <terralib/graph/graphs/BidirectionalGraph.h>
 
 #include "../Config.h"
@@ -65,17 +66,21 @@ namespace te
 
             void buildGraph(te::graph::BidirectionalGraph* biGraph, bool addStatisticsColumns);
 
+            int getVertexAttrIdx(te::graph::AbstractGraph* graph, std::string attrName);
+
             int getEdgeAttrIdx(te::graph::AbstractGraph* graph, std::string attrName);
 
             int getEdgeWeightAttrValue(te::graph::Edge* e, int attrIdx);
 
             te::graph::Edge* getHighWeightEdge(te::graph::BidirectionalGraph* biGraph, std::vector<te::graph::Edge*> edgeVec);
 
-            std::vector<int> getRoots(te::graph::AbstractGraph* graph);
+            std::vector<te::graph::Vertex*> getRoots(te::graph::AbstractGraph* graph);
 
-            void buildLevel(std::vector<int> roots);
+            void buildLevel(te::graph::BidirectionalGraph* graph, std::vector<te::graph::Vertex*> roots, int levelVertexAttrIdx, int domVertexAttrIdx);
 
-            void buildLevel(te::graph::Vertex* vertex, int level);
+            void buildLevel(te::graph::BidirectionalGraph* graph, te::graph::Vertex* vertex, int level, int levelVertexAttrIdx, int domVertexAttrIdx);
+
+            std::vector<te::graph::Vertex*> getDominatedNodes(te::graph::BidirectionalGraph* graph, te::graph::Vertex* vertex, int domVertexAttrIdx);
 
         };
       }   // end namespace fiocruz

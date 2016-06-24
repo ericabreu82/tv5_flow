@@ -72,9 +72,11 @@ namespace te
 
             int getEdgeWeightAttrValue(te::graph::Edge* e, int attrIdx);
 
+            int getEdgeMainFlowAttrValue(te::graph::Edge* e, int attrIdx);
+
             te::graph::Edge* getHighWeightEdge(te::graph::BidirectionalGraph* biGraph, std::vector<te::graph::Edge*> edgeVec);
 
-            std::vector<te::graph::Vertex*> getRoots(te::graph::AbstractGraph* graph);
+            std::vector<te::graph::Vertex*> getRoots(te::graph::AbstractGraph* graph, bool checkLocalDominance);
 
             void buildLevel(te::graph::BidirectionalGraph* graph, std::vector<te::graph::Vertex*> roots, int levelVertexAttrIdx, int domVertexAttrIdx);
 

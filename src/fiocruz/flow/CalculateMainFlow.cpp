@@ -81,7 +81,7 @@ void te::qt::plugins::fiocruz::CalculateMainFlow::calculate(te::graph::Bidirecti
   }
 
   //get roots
-  std::vector<te::graph::Vertex*> roots = getRoots(biGraph);
+  std::vector<te::graph::Vertex*> roots = getRoots(biGraph, checkLocalDominance);
 
   //set level info into graph
   int levelVertexAttrIdx = getVertexAttrIdx(biGraph, "level");
@@ -214,6 +214,14 @@ int te::qt::plugins::fiocruz::CalculateMainFlow::getEdgeWeightAttrValue(te::grap
   return atoi(weightStr.c_str());
 }
 
+int te::qt::plugins::fiocruz::CalculateMainFlow::getEdgeMainFlowAttrValue(te::graph::Edge* e, int attrIdx)
+{
+  std::string mainFlowStr = e->getAttributes()[attrIdx]->toString();
+
+  return atoi(mainFlowStr.c_str());
+}
+
+
 te::graph::Edge* te::qt::plugins::fiocruz::CalculateMainFlow::getHighWeightEdge(te::graph::BidirectionalGraph* biGraph, std::vector<te::graph::Edge*> edgeVec)
 {
   te::graph::Edge* edge = 0;
@@ -238,23 +246,55 @@ te::graph::Edge* te::qt::plugins::fiocruz::CalculateMainFlow::getHighWeightEdge(
   return edge;
 }
 
-std::vector<te::graph::Vertex*> te::qt::plugins::fiocruz::CalculateMainFlow::getRoots(te::graph::AbstractGraph* graph)
+std::vector<te::graph::Vertex*> te::qt::plugins::fiocruz::CalculateMainFlow::getRoots(te::graph::AbstractGraph* graph, bool checkLocalDominance)
 {
   std::vector<te::graph::Vertex*> roots;
+
+  int mainFlowIdx = getEdgeAttrIdx(graph, "main_flow");
+  int domVertexAttrIdx = getVertexAttrIdx(graph, "dominance");
 
   //iterate over the graph
   std::auto_ptr<te::graph::MemoryIterator> memIt(new te::graph::MemoryIterator(graph));
 
-  te::graph::Vertex* vertex = memIt->getFirstVertex();
+  te::graph::Edge* edge = memIt->getFirstEdge();
 
-  while (vertex)
+  while (edge)
   {
-    std::set<int> successors = vertex->getSuccessors();
+    int mainFlowValue = getEdgeMainFlowAttrValue(edge, mainFlowIdx);
 
-    if (successors.empty())
-      roots.push_back(vertex);
+    //verify only main edges
+    if (mainFlowValue == 1)
+    {
+      te::graph::Vertex* vFrom = graph->getVertex(edge->getIdFrom());
+      te::graph::Vertex* vTo = graph->getVertex(edge->getIdTo());
 
-    vertex = memIt->getNextVertex();
+      if (vFrom && vTo)
+      {
+        bool check = false;
+
+        if (vFrom->getId() == vTo->getId() && checkLocalDominance)
+          check = true;
+        else if (vFrom->getId() != vTo->getId())
+          check = true;
+
+        if (check)
+        {
+          te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>* vDomDataFrom = dynamic_cast<te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>*>(vFrom->getAttributes()[domVertexAttrIdx]);
+          double vDomFromValue = vDomDataFrom->getValue();
+
+          te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>* vDomDataTo = dynamic_cast<te::dt::SimpleData<double, te::dt::DOUBLE_TYPE>*>(vTo->getAttributes()[domVertexAttrIdx]);
+          double vDomToValue = vDomDataTo->getValue();
+
+          //if main flow is from a vertex with dominance value higher than to destiny, than this vertex is root
+          if (vDomFromValue >= vDomToValue)
+          {
+            roots.push_back(vFrom);
+          }
+        }
+      }
+    }
+
+    edge = memIt->getNextEdge();
   }
 
   return roots;
